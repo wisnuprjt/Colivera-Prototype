@@ -1,13 +1,9 @@
-import UserAddressCard from "@/components/user-profile/UserAddressCard";
-import UserInfoCard from "@/components/user-profile/UserInfoCard";
-import UserMetaCard from "@/components/user-profile/UserMetaCard";
+import UserPersonalInformation from "@/components/user-profile/UserPersonalInformation";
 import { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Next.js Profile | Colivera - Next.js Dashboard Template",
-  description:
-    "This is Next.js Profile page for Colivera - Next.js Tailwind CSS Admin Dashboard Template",
+  title: "Colivera - Profile",
 };
 
 export default function Profile() {
@@ -18,9 +14,7 @@ export default function Profile() {
           Profile
         </h3>
         <div className="space-y-6">
-          <UserMetaCard />
-          <UserInfoCard />
-          <UserAddressCard />
+          <UserPersonalInformation />
         </div>
       </div>
     </div>

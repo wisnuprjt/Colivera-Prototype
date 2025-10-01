@@ -5,12 +5,15 @@ interface InputProps {
   id?: string;
   name?: string;
   placeholder?: string;
-  defaultValue?: string | number;
+  value?: string | number; // For controlled components
+  defaultValue?: string | number; // For uncontrolled components
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   className?: string;
   min?: string;
   max?: string;
   step?: number;
+  minLength?: number;
+  required?: boolean;
   disabled?: boolean;
   success?: boolean;
   error?: boolean;
@@ -22,12 +25,15 @@ const Input: FC<InputProps> = ({
   id,
   name,
   placeholder,
+  value,
   defaultValue,
   onChange,
   className = "",
   min,
   max,
   step,
+  minLength,
+  required = false,
   disabled = false,
   success = false,
   error = false,
@@ -54,11 +60,14 @@ const Input: FC<InputProps> = ({
         id={id}
         name={name}
         placeholder={placeholder}
+        value={value}
         defaultValue={defaultValue}
         onChange={onChange}
         min={min}
         max={max}
         step={step}
+        minLength={minLength}
+        required={required}
         disabled={disabled}
         className={inputClasses}
       />

@@ -8,7 +8,7 @@ const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-export default function StatisticsChart() {
+export default function TotalColiform() {
   const options: ApexOptions = {
     legend: {
       show: false,

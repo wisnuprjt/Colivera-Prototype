@@ -92,6 +92,11 @@ const othersItems: NavItem[] = [
   //     // { name: "Sign Up", path: "/signup", pro: false },
   //   ],
   // },
+    {
+    icon: <PieChartIcon />,
+    name: "Tambah Akun",
+    path: "/dashboard/superadmin",
+  },
 ];
 
 const AppSidebar: React.FC = () => {

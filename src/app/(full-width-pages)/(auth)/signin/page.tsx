@@ -26,8 +26,10 @@ export default function SignIn() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      // 1) Login ke Backend (kirim cookie JWT)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
         method: "POST",
+        credentials: "include", // <-- penting agar cookie httpOnly dikirim/diterima
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
@@ -37,11 +39,19 @@ export default function SignIn() {
         throw new Error(data?.message || "Login gagal");
       }
 
-      // sukses → redirect ke dashboard
+      // 2) Ambil profil/role (opsional tapi berguna untuk kontrol UI)
+      const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
+        credentials: "include",
+      });
+      const me = await meRes.json().catch(() => ({}));
+      // contoh: simpan role di sessionStorage (untuk gating UI sisi client)
+      if (me?.user?.role) sessionStorage.setItem("role", me.user.role);
+
+      // 3) Redirect ke dashboard
       router.push("/dashboard");
       router.refresh();
     } catch (e: any) {
-      setErr(e.message || "Login gagal");
+      setErr(e?.message || "Login gagal");
     } finally {
       setLoading(false);
     }
@@ -58,7 +68,7 @@ export default function SignIn() {
       </Head>
 
       <div className="flex flex-col flex-1 lg:w-1/2 w-full">
-        <div className="w-full max-w-md sm:pt-10 mx-auto mb-5">
+        {/* <div className="w-full max-w-md sm:pt-10 mx-auto mb-5">
           <Link
             href="/"
             className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
@@ -66,7 +76,7 @@ export default function SignIn() {
             <ChevronLeftIcon />
             Back to dashboard
           </Link>
-        </div>
+        </div> */}
 
         <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
           <div>
@@ -152,12 +162,12 @@ export default function SignIn() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    {/* <div className="flex items-center gap-3">
                       <Checkbox checked={isChecked} onChange={setIsChecked} />
                       <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
                         Keep me logged in
                       </span>
-                    </div>
+                    </div> */}
 
                     <Link
                       href="/reset-password"
