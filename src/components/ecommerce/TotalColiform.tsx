@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { ApexOptions } from "apexcharts";
-import ChartTab from "../common/ChartTab";
+// import ChartTab from "../common/ChartTab";
 import dynamic from "next/dynamic";
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
@@ -109,7 +109,7 @@ export default function TotalColiform() {
           </p>
         </div>
         <div className="flex items-start w-full gap-3 sm:justify-end">
-          <ChartTab />
+          {/* <ChartTab /> */}
         </div>
       </div>
 

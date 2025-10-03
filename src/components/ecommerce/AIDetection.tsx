@@ -7,12 +7,15 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { MoreDotIcon } from "@/icons";
 import { useState } from "react";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
+import { useRouter } from "next/navigation";
+
 // Dynamically import the ReactApexChart component
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-export default function Parameter() {
+export default function AIDetection() {
+  const router = useRouter();
   const series = [100];
   const options: ApexOptions = {
     colors: ["#465FFF"],
@@ -72,13 +75,18 @@ export default function Parameter() {
     setIsOpen(false);
   }
 
+  function handleViewMore() {
+    closeDropdown();
+    router.push("/AIDetectionView");
+  }
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-white/[0.03]">
       <div className="px-5 pt-5 bg-white shadow-default rounded-2xl pb-11 dark:bg-gray-900 sm:px-6 sm:pt-6">
         <div className="flex justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-              AI Detection – E.coli Status
+              AI Detection
             </h3>
             <p className="mt-1 font-normal text-gray-500 text-theme-sm dark:text-gray-400">
               Target yang dicapai bulan ini
@@ -94,18 +102,11 @@ export default function Parameter() {
               className="w-40 p-2"
             >
               <DropdownItem
-                tag="a"
-                onItemClick={closeDropdown}
+                tag="button"
+                onItemClick={handleViewMore}
                 className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
               >
                 View More
-              </DropdownItem>
-              <DropdownItem
-                tag="a"
-                onItemClick={closeDropdown}
-                className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-              >
-                Delete
               </DropdownItem>
             </Dropdown>
           </div>

@@ -32,11 +32,16 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     subItems: [{ name: "Monitoring Parameter", path: "/dashboard", pro: false }],
   },
-  // {
-  //   icon: <CalenderIcon />,
-  //   name: "Calendar",
-  //   path: "/calendar",
-  // },
+  {
+    icon: <CalenderIcon />,
+    name: "E.Coli (CFU)",
+    path: "/E.ColiView",
+  },
+  {
+    icon: <ListIcon />,
+    name: "AI Detection",
+    path: "/AIDetectionView",
+  },
   {
     icon: <UserCircleIcon />,
     name: "User Management",
@@ -94,7 +99,7 @@ const othersItems: NavItem[] = [
   // },
     {
     icon: <PieChartIcon />,
-    name: "Tambah Akun",
+    name: "Kelola Akun",
     path: "/dashboard/superadmin",
   },
 ];
@@ -313,7 +318,7 @@ const AppSidebar: React.FC = () => {
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <Link href="/">
+        <Link href="/dashboard"> 
           {isExpanded || isHovered || isMobileOpen ? (
             <>
               <Image

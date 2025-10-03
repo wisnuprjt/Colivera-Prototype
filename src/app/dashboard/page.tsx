@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
 import React from "react";
-import Parameter from "@/components/ecommerce/Parameter";
+import AIDetection from "@/components/ecommerce/AIDetection";
 import EColiHistory from "@/components/ecommerce/EColiHistory";
 import TotalColiform from "@/components/ecommerce/TotalColiform";
 import RecentOrders from "@/components/ecommerce/RecentOrders";
@@ -23,7 +23,7 @@ export default function Ecommerce() {
       </div>
 
       <div className="col-span-12 xl:col-span-5">
-        <Parameter />
+        <AIDetection />
       </div>
 
       <div className="col-span-12">

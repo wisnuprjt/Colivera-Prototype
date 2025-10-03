@@ -108,7 +108,7 @@ export default function UserPersonalInformation() {
           </div>
           <div>
             <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-              Bio
+              Role
             </p>
             <p className="text-sm font-medium text-gray-800 dark:text-white/90">
               Super Admin
@@ -148,7 +148,7 @@ export default function UserPersonalInformation() {
                   <Input type="text" defaultValue="" />
                 </div>
                 <div className="col-span-2">
-                  <Label>Bio</Label>
+                  <Label>Role</Label>
                   <Input type="text" defaultValue="" />
                 </div>
               </div>

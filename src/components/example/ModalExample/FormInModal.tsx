@@ -51,7 +51,7 @@ export default function FormInModal() {
             </div>
 
             <div className="col-span-1 sm:col-span-2">
-              <Label>Bio</Label>
+              <Label>Role</Label>
               <Input type="text" placeholder="Team Manager" />
             </div>
           </div>

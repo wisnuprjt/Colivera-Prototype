@@ -87,7 +87,7 @@ const AppHeader: React.FC = () => {
             <Image
               width={70}
               height={32}
-              className="dark:hidden"
+              className="hidden" //"dark:hidden" kalo mau nampilin gambar
               src="./images/logo/UNDIPOfficial.svg" //ubah disini buat logo header atas
               alt="Logo"
             />
@@ -120,7 +120,7 @@ const AppHeader: React.FC = () => {
             </svg>
           </button>
 
-          <div className="hidden lg:block">
+          <div className="hidden">
             <form>
               <div className="relative">
                 <span className="absolute -translate-y-1/2 left-4 top-1/2 pointer-events-none">
