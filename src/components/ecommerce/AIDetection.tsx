@@ -77,7 +77,7 @@ export default function AIDetection() {
 
   function handleViewMore() {
     closeDropdown();
-    router.push("/AIDetectionView");
+    router.push("/dashboard/aidetectionview"); // Ganti dengan alur yang kita mau
   }
 
   return (

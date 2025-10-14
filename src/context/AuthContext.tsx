@@ -3,11 +3,13 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 type Role = "admin" | "superadmin";
+
 interface User {
   id: string | number;
   name: string;
   email: string;
   role: Role;
+  token?: string; // ✨ Tambahan penting — simpan JWT token
 }
 
 interface AuthContextType {
@@ -26,6 +28,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ========================
+  // Fetch profil user login
+  // ========================
   const fetchUser = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/auth/me`, { credentials: "include" });
@@ -33,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       } else {
         const data = await res.json();
-        // TERIMA KEDUA FORMAT: { id, name, ... } atau { user: {...} }
+        // Bisa terima format { id, name, ... } atau { user: {...} }
         setUser((data && (data.user ?? data)) as User);
       }
     } catch (e) {
@@ -44,26 +49,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  useEffect(() => { fetchUser(); }, []);
+  useEffect(() => {
+    fetchUser();
+  }, []);
 
+  // ========================
+  // LOGIN
+  // ========================
   const login = async (email: string, password: string) => {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      credentials: "include", // biar cookie token ke-set juga
       body: JSON.stringify({ email, password }),
     });
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message || "Login failed");
     }
+
     const data = await res.json();
-    setUser((data && (data.user ?? data)) as User); // terima dua format
+
+    // ✨ Simpan user + token JWT dari response backend
+    const userWithToken = {
+      ...(data.user ?? data),
+      token: data.token, // token dikirim backend di response JSON
+    };
+
+    setUser(userWithToken as User);
   };
 
+  // ========================
+  // LOGOUT
+  // ========================
   const logout = async () => {
     try {
-      await fetch(`${API_BASE}/api/auth/logout`, { method: "POST", credentials: "include" });
+      await fetch(`${API_BASE}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
     } catch (e) {
       console.error("Logout error:", e);
     } finally {
@@ -71,7 +96,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const refreshUser = async () => { await fetchUser(); };
+  // ========================
+  // REFRESH USER
+  // ========================
+  const refreshUser = async () => {
+    await fetchUser();
+  };
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
@@ -80,6 +110,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ========================
+// Hook custom useAuth
+// ========================
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within an AuthProvider");

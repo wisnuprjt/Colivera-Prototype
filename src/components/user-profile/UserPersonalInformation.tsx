@@ -1,24 +1,55 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import Image from "next/image";
+import { useAuth } from "@/context/AuthContext"; // ✅ ambil data user dari context
+
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function UserPersonalInformation() {
+  const { user } = useAuth();
   const { isOpen, openModal, closeModal } = useModal();
 
-  const handleSave = () => {
-    // Handle save logic here
-    console.log("Saving changes...");
-    closeModal();
+  const [form, setForm] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    role: user?.role || "",
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSave = async () => {
+    if (!user) return alert("User belum login.");
+    try {
+      const res = await fetch(`${API}/api/users/${user.id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        alert("✅ Data berhasil diperbarui!");
+        closeModal();
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert(`Gagal: ${data.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan.");
+    }
   };
 
   return (
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
-      {/* Bagian Foto + Nama + Role + Lokasi */}
+      {/* Header: Foto + Nama + Role */}
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
           <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
@@ -31,15 +62,15 @@ export default function UserPersonalInformation() {
           </div>
           <div>
             <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
-              Wisnu Parijata
+              {user?.name || "User Tidak Dikenal"}
             </h4>
             <div className="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Super Admin
+                {user?.role === "superadmin" ? "Super Admin" : "Admin"}
               </p>
               <div className="hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block"></div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Bali, Indonesia
+                Akun aktif sejak {new Date().toLocaleDateString("id-ID")}
               </p>
             </div>
           </div>
@@ -54,21 +85,17 @@ export default function UserPersonalInformation() {
             width="18"
             height="18"
             viewBox="0 0 18 18"
-            fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206ZM12.9698 3.84272C13.2627 3.54982 13.7376 3.54982 14.0305 3.84272L14.6934 4.50563C14.9863 4.79852 14.9863 5.2734 14.6934 5.56629L14.044 6.21573L12.3204 4.49215L12.9698 3.84272ZM11.2597 5.55281L5.6359 11.1766C5.53309 11.2794 5.46238 11.4099 5.43238 11.5522L5.01758 13.5185L6.98394 13.1037C7.1262 13.0737 7.25666 13.003 7.35947 12.9002L12.9833 7.27639L11.2597 5.55281Z"
-              fill=""
+              d="M15.0911 2.78206C14.2125 1.90338 12.7878 1.90338 11.9092 2.78206L4.57524 10.116C4.26682 10.4244 4.0547 10.8158 3.96468 11.2426L3.31231 14.3352C3.25997 14.5833 3.33653 14.841 3.51583 15.0203C3.69512 15.1996 3.95286 15.2761 4.20096 15.2238L7.29355 14.5714C7.72031 14.4814 8.11172 14.2693 8.42013 13.9609L15.7541 6.62695C16.6327 5.74827 16.6327 4.32365 15.7541 3.44497L15.0911 2.78206Z"
             />
           </svg>
           Edit
         </button>
       </div>
 
-      {/* Bagian Detail Personal Information */}
+      {/* Informasi Personal */}
       <div className="mt-7">
         <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
           Personal Information
@@ -76,42 +103,26 @@ export default function UserPersonalInformation() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
           <div>
             <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-              First Name
+              Nama Lengkap
             </p>
             <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-              Wisnu 
+              {user?.name || "-"}
             </p>
           </div>
           <div>
             <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-              Last Name
+              Email
             </p>
             <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-              Parijata
-            </p>
-          </div>
-          <div>
-            <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-              Email address
-            </p>
-            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-              wisnu@superadmin.com
-            </p>
-          </div>
-          <div>
-            <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-              Phone
-            </p>
-            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-              087862653704
+              {user?.email || "-"}
             </p>
           </div>
           <div>
             <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
               Role
             </p>
-            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-              Super Admin
+            <p className="text-sm font-medium text-gray-800 dark:text-white/90 capitalize">
+              {user?.role || "-"}
             </p>
           </div>
         </div>
@@ -119,41 +130,29 @@ export default function UserPersonalInformation() {
 
       {/* Modal Edit */}
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
-        <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
-          <div className="px-2 pr-14">
-            <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Edit Personal Information
-            </h4>
-            <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-              Update your details to keep your profile up-to-date.
-            </p>
-          </div>
+        <div className="relative w-full max-w-[700px] rounded-3xl bg-white p-6 dark:bg-gray-900">
+          <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+            Edit Personal Information
+          </h4>
+          <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
+            Update your details to keep your profile up-to-date.
+          </p>
           <form className="flex flex-col">
-            <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                <div className="col-span-2 lg:col-span-1">
-                  <Label>First Name</Label>
-                  <Input type="text" defaultValue="" />
-                </div>
-                <div className="col-span-2 lg:col-span-1">
-                  <Label>Last Name</Label>
-                  <Input type="text" defaultValue="" />
-                </div>
-                <div className="col-span-2 lg:col-span-1">
-                  <Label>Email Address</Label>
-                  <Input type="text" defaultValue="" />
-                </div>
-                <div className="col-span-2 lg:col-span-1">
-                  <Label>Phone</Label>
-                  <Input type="text" defaultValue="" />
-                </div>
-                <div className="col-span-2">
-                  <Label>Role</Label>
-                  <Input type="text" defaultValue="" />
-                </div>
+            <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+              <div className="col-span-2">
+                <Label>Nama Lengkap</Label>
+                <Input name="name" value={form.name} onChange={handleChange} />
+              </div>
+              <div className="col-span-2">
+                <Label>Email</Label>
+                <Input name="email" value={form.email} onChange={handleChange} />
+              </div>
+              <div className="col-span-2">
+                <Label>Role</Label>
+                <Input name="role" value={form.role} onChange={handleChange} />
               </div>
             </div>
-            <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
+            <div className="flex items-center gap-3 mt-6 justify-end">
               <Button size="sm" variant="outline" onClick={closeModal}>
                 Close
               </Button>

@@ -92,7 +92,7 @@ export default function EColiChart() {
 
   const handleViewMore = () => {
     closeDropdown();
-    router.push("/E.ColiView"); // Ganti dengan alur yang kita mau
+    router.push("/dashboard/ecoliview"); // Ganti dengan alur yang kita mau
   };
 
   return (
