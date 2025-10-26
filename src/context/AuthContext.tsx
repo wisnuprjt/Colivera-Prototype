@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { io } from "socket.io-client";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import { io, Socket } from "socket.io-client";
 
 type Role = "admin" | "superadmin";
 
@@ -23,19 +23,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
-
-// ========================
-// 🔌 Socket.IO Client
-// ========================
-const socket = io(API_BASE, {
-  withCredentials: true,
-  transports: ["websocket"],
-});
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const socketRef = useRef<Socket | null>(null);
 
   // ========================
   // Fetch profil user aktif
@@ -70,12 +63,82 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // ========================
-  // INIT & AUTO SYNC SESSION
+  // INIT SOCKET.IO (HANYA SEKALI)
   // ========================
   useEffect(() => {
-    fetchUser(); // pertama kali load
+    // Init socket
+    socketRef.current = io(API_BASE, {
+      withCredentials: true,
+      transports: ["websocket"],
+    });
 
-    // 🔁 AUTO REFRESH SESSION tiap 30 detik (fallback)
+    const socket = socketRef.current;
+
+    socket.on("connect", () => {
+      console.log("🟢 Connected to Socket.IO:", socket.id);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("🔴 Disconnected from Socket.IO");
+    });
+
+    // Cleanup saat unmount
+    return () => {
+      socket.disconnect();
+      console.log("🧹 Socket cleaned up");
+    };
+  }, []); // ✅ Empty dependency - hanya run sekali
+
+  // ========================
+  // SOCKET LISTENERS (dengan user sebagai dependency)
+  // ========================
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    // Handler untuk role changed
+    const handleRoleChanged = (data: any) => {
+      if (user && data.userId === user.id) {
+        console.log("⚡ Role changed:", data.newRole);
+        setUser((prev) =>
+          prev ? { ...prev, role: data.newRole as Role } : prev
+        );
+      }
+    };
+
+    // Handler untuk user created (optional - bisa trigger refresh list)
+    const handleUserCreated = (data: any) => {
+      console.log("👤 User created:", data);
+      // Opsional: trigger refresh di user management page
+    };
+
+    // Handler untuk user deleted
+    const handleUserDeleted = (data: any) => {
+      console.log("❌ User deleted:", data);
+      // Opsional: trigger refresh di user management page
+    };
+
+    // Register listeners
+    socket.on("roleChanged", handleRoleChanged);
+    socket.on("userCreated", handleUserCreated);
+    socket.on("userDeleted", handleUserDeleted);
+
+    // Cleanup listeners
+    return () => {
+      socket.off("roleChanged", handleRoleChanged);
+      socket.off("userCreated", handleUserCreated);
+      socket.off("userDeleted", handleUserDeleted);
+    };
+  }, [user]); // ✅ Ini aman karena hanya listener yang di-update, bukan socket connection
+
+  // ========================
+  // AUTO SYNC SESSION
+  // ========================
+  useEffect(() => {
+    // Fetch user pertama kali
+    fetchUser();
+
+    // 🔄 AUTO REFRESH SESSION tiap 30 detik (fallback)
     const interval = setInterval(fetchUser, 30000);
 
     // 🪄 SYNC ANTAR TAB (login/logout sinkron)
@@ -84,43 +147,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("storage", syncHandler);
 
-    // ========================
-    // ⚡ SOCKET.IO REALTIME LISTENER
-    // ========================
-    socket.on("connect", () => {
-      console.log("🟢 Connected to Socket.IO:", socket.id);
-    });
-
-    // Kalau role user berubah di DB → langsung update state
-    socket.on("roleChanged", (data: any) => {
-      if (user && data.userId === user.id) {
-        console.log("⚡ Role changed:", data.newRole);
-        // Langsung ubah state tanpa fetch ulang (lebih cepat)
-        setUser((prev) =>
-          prev ? { ...prev, role: data.newRole as Role } : prev
-        );
-      }
-    });
-
-    // Optional — user dibuat
-    socket.on("userCreated", (data: any) => {
-      console.log("👤 User created:", data);
-    });
-
-    // Optional — user dihapus
-    socket.on("userDeleted", (data: any) => {
-      console.log("❌ User deleted:", data);
-    });
-
-    // Bersihkan listener saat komponen unmount
+    // Cleanup
     return () => {
       clearInterval(interval);
       window.removeEventListener("storage", syncHandler);
-      socket.off("roleChanged");
-      socket.off("userCreated");
-      socket.off("userDeleted");
     };
-  }, [user]);
+  }, []); // ✅ Empty dependency - setup sekali saja
 
   // ========================
   // LOGIN
