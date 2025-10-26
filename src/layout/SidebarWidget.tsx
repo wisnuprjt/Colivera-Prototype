@@ -16,13 +16,13 @@ export default function SidebarWidget() {
           <p className="mb-2 text-gray-500 text-theme-sm dark:text-gray-400">
             Menjadi{" "}
             <span className={`font-semibold ${user.role === "superadmin" ? "text-indigo-600" : "text-emerald-600"}`}>
-              {user.role === "superadmin" ? "SuperAdmin" : "Admin"}
+              {user.role === "superadmin" ? "SuperAdmin" : "User"}
             </span>
           </p>
-          {/* <p className="text-xs text-gray-400 dark:text-gray-500">{user.name}</p> */}
+          <p className="text-xs text-gray-400 dark:text-gray-500">{user.name}</p>
         </>
       ) : (
-        <p className="text-gray-400 text-sm">(Session tidak ditemukan — silakan login)</p>
+        <p className="text-gray-400 text-sm">(Session tidak ditemukan — Tolong Refresh)</p>
       )}
     </div>
   );

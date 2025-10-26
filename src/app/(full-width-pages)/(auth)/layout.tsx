@@ -106,13 +106,13 @@ export default function AuthLayout({
                   <Image
                     width={231}
                     height={48}
-                    src="/images/logo/UNDIPOfficial.svg"
+                    src="/images/logo/LogoPama.svg"
                     alt="Logo"
                     priority
                   />
                 </Link>
                 <p className="text-center text-white/80 dark:text-white/70">
-                  Welcome to the admin dashboard. Please sign in to continue.
+                  Use your access in the application and login to your dashboard account.
                 </p>
               </div>
             </div>

@@ -257,7 +257,7 @@ const AppSidebar: React.FC = () => {
             <>
               <Image
                 className="dark:hidden"
-                src="/images/logo/Undip.svg"
+                src="/images/logo/LogoPama.svg" //logo white mode
                 alt="Logo"
                 width={150}
                 height={40}
@@ -272,7 +272,7 @@ const AppSidebar: React.FC = () => {
             </>
           ) : (
             <Image
-              src="/images/logo/UNDIPOfficial.svg"
+              src="/images/logo/LogoPama.svg"
               alt="Logo"
               width={32}
               height={32}
