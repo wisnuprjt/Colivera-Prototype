@@ -33,26 +33,44 @@ export default function UsersPage() {
   const [password, setPassword] = useState("");
 
   // ====== LOAD USERS ======
-  async function load() {
-    try {
-      const params = new URLSearchParams({ q, role, page: String(page), limit: "10" });
-      const res = await fetch(`${API}/api/users?${params.toString()}`, {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setRows(Array.isArray(data) ? data : []);
-      } else {
-        console.error("Fetch users gagal:", res.status);
-      }
-    } catch (err) {
-      console.error("Fetch users error:", err);
-    }
-  }
+async function load() {
+  try {
+    const params = new URLSearchParams();
 
+    // hanya tambahkan param jika terisi
+    if (q.trim() !== "") params.append("q", q);
+    if (role && role !== "all") params.append("role", role);
+
+    params.append("page", String(page));
+    params.append("limit", "10");
+
+    const res = await fetch(`${API}/api/users?${params.toString()}`, {
+      credentials: "include",
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      setRows(Array.isArray(data) ? data : []);
+    } else {
+      console.error("Fetch users gagal:", res.status);
+    }
+  } catch (err) {
+    console.error("Fetch users error:", err);
+  }
+}
+
+
+  // ====== AUTO LOAD WITH DEBOUNCE (Live Search) ======
   useEffect(() => {
-    if (user?.role === "superadmin") load();
+    const delayDebounce = setTimeout(() => {
+      if (user?.role === "superadmin") {
+        load();
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
   }, [q, role, page, user]);
+
 
   // ====== CRUD HANDLERS ======
   const handleAddUser = async (formData: any) => {
