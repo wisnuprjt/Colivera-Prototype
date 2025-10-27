@@ -35,7 +35,7 @@ const navItems: NavItem[] = [
   },
   {
     icon: <CalenderIcon />,
-    name: "E.Coli (CFU)",
+    name: "Total Coliform",
     path: "/dashboard/ecoliview",
   },
   {

@@ -1,14 +1,16 @@
 import Link from "next/link";
-import EColiChart from "@/components/ecommerce/EColiHistory";
+import EColiChart from "@/components/ecommerce/TotalColiformMPN";
+import ColiformHistoryTable from "@/components/ecommerce/ColiformHistoryTable"; // ✅ panggil komponen tabel
 
 export const metadata = { title: "E.Coli View • Colivera" };
 
 export default function EColiViewPage() {
   return (
     <div className="px-4 sm:px-6">
+      {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
-          E.Coli – Detail History (CFU)
+          Total Coliform – Detail History (MPN)
         </h1>
         <Link
           href="/dashboard"
@@ -18,16 +20,11 @@ export default function EColiViewPage() {
         </Link>
       </div>
 
-      {/* Reuse komponen chart kamu */}
+      {/* Komponen Chart */}
       <EColiChart />
 
-      {/* Placeholder: nanti kita isi tabel riwayat & filter */}
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-        <h2 className="mb-2 text-lg font-semibold">Riwayat Pembacaan Terakhir</h2>
-        <p className="text-sm text-gray-500">
-          (Placeholder) Tabel daftar timestamp, tegangan (V), dan konversi CFU.
-        </p>
-      </div>
+      {/* Komponen Tabel Riwayat (nyambung ke backend) */}
+      <ColiformHistoryTable />
     </div>
   );
 }

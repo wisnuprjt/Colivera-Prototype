@@ -117,7 +117,7 @@ export default function AIDetection() {
               options={options}
               series={series}
               type="radialBar"
-              height={330}
+              height={400}
             />
           </div>
 

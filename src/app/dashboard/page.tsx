@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
 import React from "react";
 import AIDetection from "@/components/ecommerce/AIDetection";
-import EColiHistory from "@/components/ecommerce/EColiHistory";
-import TotalColiform from "@/components/ecommerce/TotalColiform";
+import EColiHistory from "@/components/ecommerce/TotalColiformMPN";
+// import TotalColiform from "@/components/ecommerce/TotalColiform";
 import RecentOrders from "@/components/ecommerce/RecentOrders";
 import Lokasi from "@/components/ecommerce/Lokasi";
 
@@ -26,9 +26,9 @@ export default function Ecommerce() {
         <AIDetection />
       </div>
 
-      <div className="col-span-12">
+      {/* <div className="col-span-12">
         <TotalColiform />
-      </div>
+      </div> */}
 
       <div className="col-span-12 xl:col-span-5">
         <Lokasi />
