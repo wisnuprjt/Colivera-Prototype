@@ -1,7 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { io, Socket } from "socket.io-client";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 type Role = "admin" | "superadmin";
 
@@ -19,6 +18,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  setUserDirectly: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,131 +28,78 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const socketRef = useRef<Socket | null>(null);
 
   // ========================
-  // Fetch profil user aktif
+  // Fetch User Session
   // ========================
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async (silent = false) => {
     try {
-      if (!API_BASE) {
-        console.warn("API_BASE is not configured");
-        setUser(null);
-        return;
-      }
+      if (!silent) console.log("🔄 Fetching user session...");
 
       const res = await fetch(`${API_BASE}/api/auth/me`, {
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
       });
 
       if (!res.ok) {
+        if (!silent) console.log("🔴 No active session");
         setUser(null);
       } else {
         const data = await res.json();
-        setUser((data && (data.user ?? data)) as User);
+        const userData = (data && (data.user ?? data)) as User;
+        
+        if (!silent) {
+          console.log("✅ Session loaded:", userData.email, `(${userData.role})`);
+        }
+        
+        setUser(userData);
       }
     } catch (e) {
-      console.warn("Could not fetch user data. Server may not be running:", e);
+      console.error("Fetch user error:", e);
       setUser(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // ========================
-  // INIT SOCKET.IO (HANYA SEKALI)
-  // ========================
-  useEffect(() => {
-    // Init socket
-    socketRef.current = io(API_BASE, {
-      withCredentials: true,
-      transports: ["websocket"],
-    });
-
-    const socket = socketRef.current;
-
-    socket.on("connect", () => {
-      console.log("🟢 Connected to Socket.IO:", socket.id);
-    });
-
-    socket.on("disconnect", () => {
-      console.log("🔴 Disconnected from Socket.IO");
-    });
-
-    // Cleanup saat unmount
-    return () => {
-      socket.disconnect();
-      console.log("🧹 Socket cleaned up");
-    };
-  }, []); // ✅ Empty dependency - hanya run sekali
-
-  // ========================
-  // SOCKET LISTENERS (dengan user sebagai dependency)
+  // Initial Load & Periodic Sync
   // ========================
   useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket) return;
+    console.log("🚀 AuthContext initializing...");
+    
+    // Load user immediately
+    fetchUser(false);
 
-    // Handler untuk role changed
-    const handleRoleChanged = (data: any) => {
-      if (user && data.userId === user.id) {
-        console.log("⚡ Role changed:", data.newRole);
-        setUser((prev) =>
-          prev ? { ...prev, role: data.newRole as Role } : prev
-        );
-      }
-    };
+    // Periodic check every 3 seconds (aggressive sync)
+    const interval = setInterval(() => {
+      fetchUser(true);
+    }, 3000);
 
-    // Handler untuk user created (optional - bisa trigger refresh list)
-    const handleUserCreated = (data: any) => {
-      console.log("👤 User created:", data);
-      // Opsional: trigger refresh di user management page
-    };
-
-    // Handler untuk user deleted
-    const handleUserDeleted = (data: any) => {
-      console.log("❌ User deleted:", data);
-      // Opsional: trigger refresh di user management page
-    };
-
-    // Register listeners
-    socket.on("roleChanged", handleRoleChanged);
-    socket.on("userCreated", handleUserCreated);
-    socket.on("userDeleted", handleUserDeleted);
-
-    // Cleanup listeners
-    return () => {
-      socket.off("roleChanged", handleRoleChanged);
-      socket.off("userCreated", handleUserCreated);
-      socket.off("userDeleted", handleUserDeleted);
-    };
-  }, [user]); // ✅ Ini aman karena hanya listener yang di-update, bukan socket connection
-
-  // ========================
-  // AUTO SYNC SESSION
-  // ========================
-  useEffect(() => {
-    // Fetch user pertama kali
-    fetchUser();
-
-    // 🔄 AUTO REFRESH SESSION tiap 30 detik (fallback)
-    const interval = setInterval(fetchUser, 30000);
-
-    // 🪄 SYNC ANTAR TAB (login/logout sinkron)
+    // Cross-tab sync
     const syncHandler = (e: StorageEvent) => {
-      if (e.key === "colivera_session_change") fetchUser();
+      if (e.key === "colivera_session_change") {
+        console.log("🪄 Cross-tab sync triggered");
+        fetchUser(false);
+      }
     };
     window.addEventListener("storage", syncHandler);
 
-    // Cleanup
+    // Tab visibility
+    const visibilityHandler = () => {
+      if (document.visibilityState === "visible") {
+        fetchUser(true);
+      }
+    };
+    document.addEventListener("visibilitychange", visibilityHandler);
+
     return () => {
       clearInterval(interval);
       window.removeEventListener("storage", syncHandler);
+      document.removeEventListener("visibilitychange", visibilityHandler);
     };
-  }, []); // ✅ Empty dependency - setup sekali saja
+  }, [fetchUser]);
 
   // ========================
   // LOGIN
@@ -171,15 +118,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const data = await res.json();
-    const userWithToken = {
-      ...(data.user ?? data),
-      token: data.token,
-    };
+    const userWithToken = { ...(data.user ?? data), token: data.token };
 
+    console.log("✅ Login success:", userWithToken.email);
+    
     setUser(userWithToken as User);
-
-    // 🪄 trigger sync antar tab
     localStorage.setItem("colivera_session_change", Date.now().toString());
+    
+    // Immediate validation
+    setTimeout(() => fetchUser(true), 100);
   };
 
   // ========================
@@ -187,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ========================
   const logout = async () => {
     try {
+      console.log("🚪 Logging out...");
       await fetch(`${API_BASE}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
@@ -200,22 +148,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // ========================
-  // REFRESH USER MANUAL
+  // Manual Refresh
   // ========================
   const refreshUser = async () => {
-    await fetchUser();
+    await fetchUser(false);
   };
 
+  // ========================
+  // Direct User Update (for realtime sync)
+  // ========================
+  const setUserDirectly = useCallback((newUser: User | null) => {
+    setUser(newUser);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider 
+      value={{ user, loading, login, logout, refreshUser, setUserDirectly }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-// ========================
-// Hook custom useAuth()
-// ========================
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within an AuthProvider");

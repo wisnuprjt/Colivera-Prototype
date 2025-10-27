@@ -7,75 +7,89 @@ import Button from "@/components/ui/button/Button";
 import AddUserModal from "@/components/superadminmodal/AddUserModal";
 import EditUserModal from "@/components/superadminmodal/EditUserModal";
 import ResetPasswordModal from "@/components/superadminmodal/ResetPasswordModal";
-import HapusUserModal from "@/components/superadminmodal/HapusUserModal"; // 🆕 tambahan
+import HapusUserModal from "@/components/superadminmodal/HapusUserModal";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
-if (!API) console.error("❌ NEXT_PUBLIC_API_URL belum kebaca, cek .env.local");
 
 export default function UsersPage() {
   const { user } = useAuth();
 
-  // ====== STATE ======
   const [rows, setRows] = useState<any[]>([]);
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
   const [page, setPage] = useState(1);
 
-  // modal visibility
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false); // 🆕 tambahan
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  // data states
   const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "admin" });
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [password, setPassword] = useState("");
 
   // ====== LOAD USERS ======
-async function load() {
-  try {
-    const params = new URLSearchParams();
+  async function load() {
+    try {
+      const params = new URLSearchParams();
+      if (q.trim()) params.append("q", q);
+      if (role && role !== "all") params.append("role", role);
+      params.append("page", String(page));
+      params.append("limit", "10");
 
-    // hanya tambahkan param jika terisi
-    if (q.trim() !== "") params.append("q", q);
-    if (role && role !== "all") params.append("role", role);
+      console.log("📊 Loading users...");
+      const res = await fetch(`${API}/api/users?${params.toString()}`, {
+        credentials: "include",
+      });
 
-    params.append("page", String(page));
-    params.append("limit", "10");
-
-    const res = await fetch(`${API}/api/users?${params.toString()}`, {
-      credentials: "include",
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      setRows(Array.isArray(data) ? data : []);
-    } else {
-      console.error("Fetch users gagal:", res.status);
+      if (res.ok) {
+        const data = await res.json();
+        console.log("✅ Users loaded:", data.length);
+        setRows(Array.isArray(data) ? data : []);
+      } else {
+        console.error("❌ Failed to load users:", res.status);
+        setRows([]);
+      }
+    } catch (err) {
+      console.error("❌ Load users error:", err);
+      setRows([]);
     }
-  } catch (err) {
-    console.error("Fetch users error:", err);
   }
-}
 
-
-  // ====== AUTO LOAD WITH DEBOUNCE (Live Search) ======
+  // ====== AUTO LOAD (Debounced) ======
   useEffect(() => {
-    const delayDebounce = setTimeout(() => {
+    const timer = setTimeout(() => {
       if (user?.role === "superadmin") {
         load();
       }
     }, 400);
 
-    return () => clearTimeout(delayDebounce);
+    return () => clearTimeout(timer);
   }, [q, role, page, user]);
 
+  // ====== REALTIME LISTENER ======
+  useEffect(() => {
+    console.log("🎧 User Management: Setting up realtime listener");
+
+    const handleUserListChanged = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log("⚡ User list changed:", customEvent.detail);
+      load(); // Reload list
+    };
+
+    window.addEventListener("userListChanged", handleUserListChanged);
+
+    return () => {
+      window.removeEventListener("userListChanged", handleUserListChanged);
+    };
+  }, [q, role, page]); // Re-attach with current filters
 
   // ====== CRUD HANDLERS ======
   const handleAddUser = async (formData: any) => {
-    if (!formData.name || !formData.email || !formData.password)
+    if (!formData.name || !formData.email || !formData.password) {
       return alert("Isi semua field!");
+    }
+    
     try {
       const res = await fetch(`${API}/api/users`, {
         method: "POST",
@@ -83,6 +97,7 @@ async function load() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+      
       if (res.ok) {
         alert("✅ User berhasil ditambahkan!");
         setIsAddOpen(false);
@@ -106,6 +121,7 @@ async function load() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedUser),
       });
+      
       if (res.ok) {
         alert("✅ Data user berhasil diperbarui!");
         setIsEditOpen(false);
@@ -120,8 +136,10 @@ async function load() {
   };
 
   const handleResetPassword = async (id: string, newPassword: string) => {
-    if (!newPassword || newPassword.length < 8)
+    if (!newPassword || newPassword.length < 8) {
       return alert("Password minimal 8 karakter!");
+    }
+    
     try {
       const res = await fetch(`${API}/api/users/${id}/password`, {
         method: "PATCH",
@@ -129,11 +147,11 @@ async function load() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ newPassword }),
       });
+      
       if (res.ok) {
         alert("✅ Password berhasil direset!");
         setIsResetOpen(false);
         setPassword("");
-        load();
       } else {
         alert("Gagal reset password.");
       }
@@ -149,6 +167,7 @@ async function load() {
         method: "DELETE",
         credentials: "include",
       });
+      
       if (res.ok) {
         alert("✅ User berhasil dihapus!");
         setIsDeleteOpen(false);
@@ -162,13 +181,17 @@ async function load() {
   };
 
   // ====== AUTH CHECK ======
-  if (!user) return <p className="text-center mt-10 text-gray-500">Memuat…</p>;
-  if (user.role !== "superadmin")
+  if (!user) {
+    return <p className="text-center mt-10 text-gray-500">Memuat…</p>;
+  }
+  
+  if (user.role !== "superadmin") {
     return (
       <p className="p-6 text-red-600 font-semibold text-center">
         403 — Hanya SuperAdmin
       </p>
     );
+  }
 
   // ====== RENDER ======
   return (
@@ -198,7 +221,6 @@ async function load() {
         </select>
       </div>
 
-      {/* ==== USERS TABLE ==== */}
       <div className="overflow-x-auto rounded-lg shadow bg-white">
         <table className="w-full text-sm">
           <thead className="bg-indigo-600 text-white">
@@ -211,10 +233,7 @@ async function load() {
           </thead>
           <tbody>
             {rows.map((u) => (
-              <tr
-                key={u.id}
-                className="border-b hover:bg-indigo-50 transition-colors"
-              >
+              <tr key={u.id} className="border-b hover:bg-indigo-50 transition-colors">
                 <td className="p-3 font-medium text-gray-800">{u.name}</td>
                 <td className="p-3 text-gray-700">{u.email}</td>
                 <td className="p-3">
@@ -250,7 +269,7 @@ async function load() {
                   <button
                     onClick={() => {
                       setSelectedUser(u);
-                      setIsDeleteOpen(true); // 🆕 pakai modal hapus
+                      setIsDeleteOpen(true);
                     }}
                     className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md shadow-sm"
                   >
@@ -270,7 +289,6 @@ async function load() {
         </table>
       </div>
 
-      {/* ==== MODALS ==== */}
       <AddUserModal
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}

@@ -1,128 +1,110 @@
 "use client";
-import ThemeTogglerTwo from "@/components/common/ThemeTogglerTwo";
 import { ThemeProvider } from "@/context/ThemeContext";
 import Image from "next/image";
-import Link from "next/link";
 import React, { useEffect, useRef } from "react";
+import TypewriterText from "@/components/common/TypewriterText";
 
-/** ====== Animasi Tsunami Waves (inline component) ====== */
-function TsunamiWaves({
-  ampFront = 140,
-  ampBack = 90,
-  speed = 0.12,
-  className = "",
-}: {
-  ampFront?: number;
-  ampBack?: number;
-  speed?: number;
-  className?: string;
-}) {
-  const wave1Ref = useRef<SVGPathElement | null>(null);
-  const wave2Ref = useRef<SVGPathElement | null>(null);
+/* ===== Komponen: Realistic Wave Background ===== */
+function AnimatedWaves() {
+  const waveRef1 = useRef<SVGPathElement | null>(null);
+  const waveRef2 = useRef<SVGPathElement | null>(null);
   const tRef = useRef(0);
-  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
+    let animationFrameId: number;
     const animate = () => {
-      tRef.current += speed;
+      tRef.current += 0.015;
       const t = tRef.current;
       const s = Math.sin;
-      const c = Math.cos;
 
-      const d1 = `M0,${160 + ampFront * s(t)}L60,${170 + ampFront * s(t + 0.2)}
-        C120,${180 + ampFront * s(t + 0.4)},240,${200 + ampFront * s(t + 0.6)},
-        360,${186.7 + ampFront * s(t + 0.8)}
-        C480,${173 + ampFront * s(t + 1)},600,${127 + ampFront * s(t + 1.2)},
-        720,${112 + ampFront * s(t + 1.4)}
-        C840,${97 + ampFront * s(t + 1.6)},960,${111 + ampFront * s(t + 1.8)},
-        1080,${117.3 + ampFront * s(t + 2)}
-        C1200,${123 + ampFront * s(t + 2.2)},1320,${117 + ampFront * s(t + 2.4)},
-        1380,${112 + ampFront * s(t + 2.6)}L1440,${107 + ampFront * s(t + 2.8)}L1440,320L0,320Z`;
+      const d1 = `
+        M0,240
+        Q120,${230 + 15 * s(t + 0.5)}
+        240,${240 + 15 * s(t + 1)}
+        T480,${235 + 15 * s(t + 2)}
+        T720,${240 + 15 * s(t + 3)}
+        T960,${230 + 15 * s(t + 4)}
+        T1200,${235 + 15 * s(t + 5)}
+        T1440,${240 + 15 * s(t + 6)}
+        V320H0Z
+      `;
 
-      const d2 = `M0,${200 + ampBack * c(t)}L80,${210 + ampBack * c(t + 0.2)}
-        C160,${220 + ampBack * c(t + 0.4)},320,${240 + ampBack * c(t + 0.6)},
-        480,${226.7 + ampBack * c(t + 0.8)}
-        C640,${213 + ampBack * c(t + 1)},800,${167 + ampBack * c(t + 1.2)},
-        960,${160 + ampBack * c(t + 1.4)}
-        C1120,${153 + ampBack * c(t + 1.6)},1280,${173 + ampBack * c(t + 1.8)},
-        1360,${180 + ampBack * c(t + 2)},1440,${187 + ampBack * c(t + 2.2)}L1440,320L0,320Z`;
+      const d2 = `
+        M0,250
+        Q120,${255 + 10 * s(t + 1)}
+        240,${250 + 10 * s(t + 2)}
+        T480,${255 + 10 * s(t + 3)}
+        T720,${250 + 10 * s(t + 4)}
+        T960,${255 + 10 * s(t + 5)}
+        T1200,${250 + 10 * s(t + 6)}
+        T1440,${255 + 10 * s(t + 7)}
+        V320H0Z
+      `;
 
-      wave1Ref.current?.setAttribute("d", d1);
-      wave2Ref.current?.setAttribute("d", d2);
-      rafRef.current = requestAnimationFrame(animate);
+      if (waveRef1.current) waveRef1.current.setAttribute("d", d1);
+      if (waveRef2.current) waveRef2.current.setAttribute("d", d2);
+      animationFrameId = requestAnimationFrame(animate);
     };
-
-    rafRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [ampFront, ampBack, speed]);
+    animate();
+    return () => cancelAnimationFrame(animationFrameId);
+  }, []);
 
   return (
     <svg
-      className={`absolute bottom-0 left-0 w-full h-full ${className}`}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 1440 320"
       preserveAspectRatio="none"
-      aria-hidden="true"
+      className="absolute bottom-0 left-0 w-full h-40 opacity-70"
     >
-      <path
-        ref={wave1Ref}
-        fill="#38bdf8"
-        fillOpacity="0.6"
-        d="M0,160L60,170C120,180,240,200,360,186.7C480,173,600,127,720,112C840,97,960,111,1080,117.3C1200,123,1320,117,1380,112L1440,107L1440,320L0,320Z"
-      />
-      <path
-        ref={wave2Ref}
-        fill="#0ea5e9"
-        fillOpacity="0.4"
-        d="M0,200L80,210C160,220,320,240,480,226.7C640,213,800,167,960,160C1120,153,1280,173,1360,180L1440,187L1440,320L0,320Z"
-      />
+      <path ref={waveRef2} fill="#5eead4" fillOpacity="0.25" />
+      <path ref={waveRef1} fill="#2dd4bf" fillOpacity="0.4" />
     </svg>
   );
 }
 
-/** ================= AuthLayout ================= */
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+/* ===== Layout Halaman Login ===== */
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
-      <ThemeProvider>
-        <div className="relative flex lg:flex-row w-full h-screen justify-center flex-col dark:bg-gray-900 sm:p-0">
-          {children}
+    <ThemeProvider>
+      <div className="relative min-h-screen flex flex-col lg:flex-row items-center justify-center bg-gradient-to-br from-sky-50 via-teal-50 to-cyan-100 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 overflow-hidden transition-all">
+        <AnimatedWaves />
 
-          {/* Panel kanan dengan animasi ombak */}
-          <div className="lg:w-1/2 w-full h-full bg-brand-950 relative overflow-hidden lg:grid items-center hidden dark:bg-white/5">
-            {/* Animasi sebagai background */}
-            <TsunamiWaves ampFront={140} ampBack={90} speed={0.12} />
+        {/* HERO KIRI */}
+        <div className="relative flex flex-col justify-center items-start flex-1 w-full max-w-lg text-left lg:pl-10 z-10">
+          <Image
+            src="/images/logo/LogoPama.svg"
+            width={190}
+            height={45}
+            alt="COLIVERA Logo"
+            priority
+            className="mb-10"
+          />
+          <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight">
+            Pantau Kualitas Air Anda <br />
+            dengan{" "}
+            <span className="text-emerald-600 dark:text-emerald-400">
+              COLIVERA
+            </span>
+          </h1>
 
-            {/* Konten di atas animasi */}
-            <div className="relative items-center justify-center flex z-10">
-              <div className="flex flex-col items-center max-w-xs">
-                <Link href="/" className="block mb-4">
-                  <Image
-                    width={231}
-                    height={48}
-                    src="/images/logo/LogoPama.svg"
-                    alt="Logo"
-                    priority
-                  />
-                </Link>
-                <p className="text-center text-white/80 dark:text-white/70">
-                  Use your access in the application and login to your dashboard account.
-                </p>
-              </div>
-            </div>
-          </div>
+          <p className="mt-4 text-gray-600 dark:text-gray-300 text-lg max-w-md">
+            Deteksi cepat bakteri <span className="font-semibold">E. coli</span>{" "}
+            dan parameter air lain menggunakan teknologi IoT & AI.
+          </p>
 
-          <div className="fixed bottom-6 right-6 z-50 hidden sm:block">
-            <ThemeTogglerTwo />
+          {/* Typewriter muncul di sini */}
+          <div className="mt-6 text-emerald-600 dark:text-emerald-400 font-medium text-base min-h-[1.5rem]">
+            <TypewriterText />
           </div>
         </div>
-      </ThemeProvider>
-    </div>
+
+        {/* FORM LOGIN KANAN */}
+        <div className="relative w-full max-w-md flex justify-center mt-10 lg:mt-0 lg:ml-20 z-10">
+          <div className="w-full p-8 bg-white/85 dark:bg-gray-900/70 backdrop-blur-2xl rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
+            {children}
+          </div>
+        </div>
+      </div>
+    </ThemeProvider>
   );
 }
