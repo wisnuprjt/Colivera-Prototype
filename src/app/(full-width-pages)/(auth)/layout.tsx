@@ -100,8 +100,19 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* FORM LOGIN KANAN */}
         <div className="relative w-full max-w-md flex justify-center mt-10 lg:mt-0 lg:ml-20 z-10">
-          <div className="w-full p-8 bg-white/85 dark:bg-gray-900/70 backdrop-blur-2xl rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
+          <div className="w-full p-8 bg-white/30 dark:bg-gray-900/30 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/30">
             {children}
+          </div>
+        </div>
+
+        {/* Copyright Footer */}
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center z-20">
+          <div className="group relative">
+            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm transition-all duration-300 hover:text-emerald-600 dark:hover:text-emerald-400">
+              <span className="inline-block group-hover:translate-y-[-8px] transition-transform duration-300">©</span>
+              <span className="inline-block group-hover:translate-y-[-8px] transition-transform duration-300" style={{ transitionDelay: '50ms' }}>2025</span>
+              <span className="font-semibold inline-block group-hover:translate-y-[-8px] transition-transform duration-300" style={{ transitionDelay: '100ms' }}>Lulus</span>
+            </div>
           </div>
         </div>
       </div>

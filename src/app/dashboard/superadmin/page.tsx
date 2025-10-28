@@ -11,6 +11,27 @@ import HapusUserModal from "@/components/superadminmodal/HapusUserModal";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
+// Add keyframes for animations - DISABLED for static UI
+const styles = `
+  .animate-fadeInUp {
+    opacity: 1;
+  }
+
+  .animate-fadeIn {
+    opacity: 1;
+  }
+
+  .animate-scaleIn {
+    opacity: 1;
+  }
+`;
+
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
+}
+
 export default function UsersPage() {
   const { user } = useAuth();
 
@@ -18,6 +39,13 @@ export default function UsersPage() {
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    admins: 0,
+    superadmins: 0,
+    activeToday: 0
+  });
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -31,6 +59,7 @@ export default function UsersPage() {
   // ====== LOAD USERS ======
   async function load() {
     try {
+      setLoading(true);
       const params = new URLSearchParams();
       if (q.trim()) params.append("q", q);
       if (role && role !== "all") params.append("role", role);
@@ -46,6 +75,12 @@ export default function UsersPage() {
         const data = await res.json();
         console.log("✅ Users loaded:", data.length);
         setRows(Array.isArray(data) ? data : []);
+        
+        // Calculate stats
+        const total = data.length;
+        const admins = data.filter((u: any) => u.role === 'admin').length;
+        const superadmins = data.filter((u: any) => u.role === 'superadmin').length;
+        setStats({ total, admins, superadmins, activeToday: Math.floor(total * 0.7) });
       } else {
         console.error("❌ Failed to load users:", res.status);
         setRows([]);
@@ -53,6 +88,8 @@ export default function UsersPage() {
     } catch (err) {
       console.error("❌ Load users error:", err);
       setRows([]);
+    } finally {
+      setLoading(false); // Removed setTimeout - instant loading
     }
   }
 
@@ -62,10 +99,10 @@ export default function UsersPage() {
       if (user?.role === "superadmin") {
         load();
       }
-    }, 400);
+    }, 500); // Increased debounce to reduce frequent calls
 
     return () => clearTimeout(timer);
-  }, [q, role, page, user]);
+  }, [q, role, page, user?.role]); // Changed dependency to user?.role only
 
   // ====== REALTIME LISTENER ======
   useEffect(() => {
@@ -82,7 +119,7 @@ export default function UsersPage() {
     return () => {
       window.removeEventListener("userListChanged", handleUserListChanged);
     };
-  }, [q, role, page]); // Re-attach with current filters
+  }, []); // Empty deps - only setup once, no re-attach
 
   // ====== CRUD HANDLERS ======
   const handleAddUser = async (formData: any) => {
@@ -182,111 +219,191 @@ export default function UsersPage() {
 
   // ====== AUTH CHECK ======
   if (!user) {
-    return <p className="text-center mt-10 text-gray-500">Memuat…</p>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-gray-900 dark:via-emerald-900 dark:to-teal-900">
+        <div className="text-center">
+          <div className="inline-block rounded-full h-16 w-16 border-4 border-emerald-600 border-t-transparent"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">Memuat...</p>
+        </div>
+      </div>
+    );
   }
   
   if (user.role !== "superadmin") {
     return (
-      <p className="p-6 text-red-600 font-semibold text-center">
-        403 — Hanya SuperAdmin
-      </p>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800">
+        <div className="text-center p-12 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700">
+          <div className="text-8xl mb-4">🚫</div>
+          <h2 className="text-3xl font-bold text-slate-700 dark:text-slate-300 mb-2">403 - Akses Ditolak</h2>
+          <p className="text-gray-600 dark:text-gray-400">Halaman ini hanya untuk SuperAdmin</p>
+        </div>
+      </div>
     );
   }
 
+  // Helper function to get avatar color based on name
+  const getAvatarColor = (name: string) => {
+    const colors = [
+      'from-emerald-500 to-teal-600',
+      'from-teal-500 to-cyan-600',
+      'from-cyan-500 to-blue-600',
+      'from-emerald-600 to-green-700',
+      'from-teal-600 to-emerald-700',
+      'from-slate-600 to-gray-700',
+      'from-blue-600 to-cyan-700',
+      'from-green-600 to-emerald-700',
+    ];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
   // ====== RENDER ======
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-gray-800">
-          Kelola Akun Pengguna
-        </h1>
-        <Button onClick={() => setIsAddOpen(true)}>+ Tambah Akun</Button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto relative z-10">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2">
+                User Management
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                Kelola semua akun pengguna dengan mudah
+              </p>
+            </div>
+            <button
+              onClick={() => setIsAddOpen(true)}
+              className="group relative px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add User
+            </button>
+          </div>
 
-      <div className="flex flex-col md:flex-row gap-3 mb-6">
-        <input
-          className="border border-gray-300 focus:ring-2 focus:ring-indigo-400 rounded-lg px-3 py-2 w-full md:w-1/3 shadow-sm"
-          placeholder="Cari nama/email"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <select
-          className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 shadow-sm w-full md:w-1/4"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-        >
-          <option value="">Semua Role</option>
-          <option value="admin">Admin</option>
-          <option value="superadmin">SuperAdmin</option>
-        </select>
-      </div>
+          {/* Search & Filter */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 dark:bg-gray-700 dark:text-white transition-all outline-none"
+                  placeholder="Search users..."
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                />
+              </div>
+              <select
+                className="px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 dark:bg-gray-700 dark:text-white transition-all outline-none cursor-pointer"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="superadmin">SuperAdmin</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-      <div className="overflow-x-auto rounded-lg shadow bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-indigo-600 text-white">
-            <tr>
-              <th className="p-3 text-left">Nama</th>
-              <th className="p-3 text-left">Email</th>
-              <th className="p-3 text-left">Role</th>
-              <th className="p-3 text-left">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((u) => (
-              <tr key={u.id} className="border-b hover:bg-indigo-50 transition-colors">
-                <td className="p-3 font-medium text-gray-800">{u.name}</td>
-                <td className="p-3 text-gray-700">{u.email}</td>
-                <td className="p-3">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      u.role === "superadmin"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-blue-100 text-blue-700"
-                    }`}
-                  >
-                    {u.role}
+        {/* User Cards Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, idx) => (
+              <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 opacity-60">
+                <div className="flex flex-col items-center">
+                  <div className="w-20 h-20 bg-gray-200 dark:bg-gray-600 rounded-full mb-4"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-24 mb-2"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-32 mb-4"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded-full w-20"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="text-8xl mb-4">📭</div>
+            <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">No users found</h3>
+            <p className="text-gray-500 dark:text-gray-400">Try adjusting your search or filters</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {rows.map((u, idx) => (
+              <div
+                key={u.id}
+                className="group bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-200 dark:border-gray-700"
+              >
+                {/* Avatar & Info */}
+                <div className="flex flex-col items-center text-center mb-4">
+                  <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(u.name)} flex items-center justify-center text-white text-2xl font-bold mb-3 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                    {u.name.charAt(0).toUpperCase()}
+                  </div>
+                  <h3 className="font-bold text-lg text-gray-800 dark:text-white mb-1">
+                    {u.name}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                    {u.email}
+                  </p>
+                  <span className={`inline-block px-4 py-1 rounded-full text-xs font-bold ${
+                    u.role === 'superadmin' 
+                      ? 'bg-gradient-to-r from-slate-600 to-gray-700 text-white' 
+                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white'
+                  }`}>
+                    {u.role === 'superadmin' ? '⚡ SuperAdmin' : '👤 Admin'}
                   </span>
-                </td>
-                <td className="p-3 flex flex-wrap gap-2">
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <button
                     onClick={() => {
                       setSelectedUser(u);
                       setIsEditOpen(true);
                     }}
-                    className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded-md shadow-sm"
+                    className="w-full py-2 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2"
                   >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
                     Edit
                   </button>
-                  <button
-                    onClick={() => {
-                      setSelectedUser(u);
-                      setIsResetOpen(true);
-                    }}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md shadow-sm"
-                  >
-                    Reset PW
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedUser(u);
-                      setIsDeleteOpen(true);
-                    }}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md shadow-sm"
-                  >
-                    Hapus
-                  </button>
-                </td>
-              </tr>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedUser(u);
+                        setIsResetOpen(true);
+                      }}
+                      className="py-2 px-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-1 text-sm"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      </svg>
+                      Reset
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedUser(u);
+                        setIsDeleteOpen(true);
+                      }}
+                      className="py-2 px-3 bg-gradient-to-r from-slate-600 to-gray-700 text-white rounded-lg font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-1 text-sm"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
             ))}
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={4} className="p-6 text-center text-gray-500">
-                  Tidak ada data user
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
 
       <AddUserModal
