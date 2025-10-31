@@ -47,6 +47,22 @@ export default function UserPersonalInformation() {
     }
   };
 
+  // Helper function untuk format tanggal
+  const formatCreatedDate = (dateString?: string): string => {
+    if (!dateString) return "Tanggal tidak tersedia";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Tanggal tidak valid";
+      return date.toLocaleDateString("id-ID", { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      });
+    } catch {
+      return "Tanggal tidak tersedia";
+    }
+  };
+
   return (
     <div className="overflow-hidden border border-gray-200 rounded-2xl bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       {/* Header Section with Gradient Background */}
@@ -105,7 +121,7 @@ export default function UserPersonalInformation() {
                 </span>
                 <div className="hidden sm:block h-4 w-px bg-gray-300 dark:bg-gray-700"></div>
                 <span className="text-sm">
-                  Aktif sejak {new Date().toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}
+                  Aktif sejak {formatCreatedDate(user?.created_at)}
                 </span>
               </div>
             </div>
@@ -161,6 +177,20 @@ export default function UserPersonalInformation() {
               </div>
               <p className="text-base font-semibold text-gray-800 dark:text-white pl-6 capitalize">
                 {user?.role || "-"}
+              </p>
+            </div>
+
+            <div className="group">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Tanggal Bergabung
+                </p>
+              </div>
+              <p className="text-base font-semibold text-gray-800 dark:text-white pl-6">
+                {formatCreatedDate(user?.created_at)}
               </p>
             </div>
           </div>
