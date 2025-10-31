@@ -9,6 +9,8 @@ interface User {
   name: string;
   email: string;
   role: Role;
+  created_at?: string;   // ✅ tambahkan
+  updated_at?: string;   // ✅ opsional, bisa berguna nanti
   token?: string;
 }
 

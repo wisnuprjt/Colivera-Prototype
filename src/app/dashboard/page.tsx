@@ -15,27 +15,25 @@ export const metadata: Metadata = {
 
 export default function Ecommerce() {
   return (
-    <div className="grid grid-cols-12 gap-4 md:gap-6">
-      <div className="col-span-12 space-y-6 xl:col-span-7">
+    <div className="space-y-6">
+      {/* Metrics Cards - Full Width */}
+      <div className="w-full">
         <EcommerceMetrics />
-
-        <EColiHistory />
       </div>
 
-      <div className="col-span-12 xl:col-span-5">
-        <AIDetection />
-      </div>
+      {/* Main Content - 2 Columns */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {/* Left Column */}
+        <div className="space-y-6">
+          <EColiHistory />
+          <RecentOrders />
+        </div>
 
-      {/* <div className="col-span-12">
-        <TotalColiform />
-      </div> */}
-
-      <div className="col-span-12 xl:col-span-5">
-        <Lokasi />
-      </div>
-
-      <div className="col-span-12 xl:col-span-7">
-        <RecentOrders />
+        {/* Right Column */}
+        <div className="space-y-6">
+          <AIDetection />
+          <Lokasi />
+        </div>
       </div>
     </div>
   );
