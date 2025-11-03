@@ -114,8 +114,8 @@ export default function AddUserModal({ isOpen, onClose, onSave, form, setForm }:
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
                 className="w-full border-2 border-gray-300 dark:border-gray-600 rounded-xl pl-12 pr-12 py-3 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#4F7C82] focus:border-[#4F7C82] transition-all duration-200 appearance-none cursor-pointer font-medium hover:border-[#93B1B5] shadow-sm hover:shadow-md"
               >
-                <option value="admin">👤 Admin - Kelola Data Harian</option>
-                <option value="superadmin">⭐ SuperAdmin - Akses Penuh Sistem</option>
+                <option value="admin">Admin</option>
+                <option value="superadmin">SuperAdmin</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
                 <svg className="w-5 h-5 text-[#4F7C82]" fill="none" viewBox="0 0 24 24" stroke="currentColor">

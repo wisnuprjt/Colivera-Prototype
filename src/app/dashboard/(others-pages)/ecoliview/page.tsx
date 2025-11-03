@@ -1,6 +1,7 @@
 import Link from "next/link";
 import EColiChart from "@/components/ecommerce/TotalColiformMPN";
-import ColiformHistoryTable from "@/components/ecommerce/ColiformHistoryTable"; // ✅ panggil komponen tabel
+import ColiformHistoryTable from "@/components/ecommerce/ColiformHistoryTable";
+import { ArrowLeftIcon } from "lucide-react";
 
 export const metadata = { title: "E.Coli View • Colivera" };
 
@@ -8,20 +9,18 @@ export default function EColiViewPage() {
   return (
     <div className="px-4 sm:px-6">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
-          Total Coliform – Detail History (MPN)
-        </h1>
+      <div className="mb-6">
         <Link
           href="/dashboard"
-          className="text-sm text-primary-600 hover:underline"
+          className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-500 transition-colors"
         >
-          ← Back to Dashboard
+          <ArrowLeftIcon className="size-4" />
+          Back to Dashboard
         </Link>
       </div>
 
       {/* Komponen Chart */}
-      <EColiChart />
+      <EColiChart hideDropdown={true} />
 
       {/* Komponen Tabel Riwayat (nyambung ke backend) */}
       <ColiformHistoryTable />

@@ -15,9 +15,13 @@ interface DataPoint {
   cfu: number;
 }
 
+interface TotalColiformMPNProps {
+  hideDropdown?: boolean;
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000/api";
 
-export default function TotalColiformMPN() {
+export default function TotalColiformMPN({ hideDropdown = false }: TotalColiformMPNProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [data, setData] = useState<DataPoint[]>([]);
@@ -138,22 +142,24 @@ export default function TotalColiformMPN() {
             </div>
           </div>
 
-          <div className="relative inline-block">
-            <button onClick={toggleDropdown} className="dropdown-toggle">
-              <MoreDotIcon className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" />
-            </button>
-            <Dropdown isOpen={isOpen} onClose={closeDropdown} className="w-40 p-2">
-              <DropdownItem
-                onItemClick={() => {
-                  closeDropdown();
-                  router.push("/dashboard/ecoliview");
-                }}
-                className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-              >
-                View More
-              </DropdownItem>
-            </Dropdown>
-          </div>
+          {!hideDropdown && (
+            <div className="relative inline-block">
+              <button onClick={toggleDropdown} className="dropdown-toggle">
+                <MoreDotIcon className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" />
+              </button>
+              <Dropdown isOpen={isOpen} onClose={closeDropdown} className="w-40 p-2">
+                <DropdownItem
+                  onItemClick={() => {
+                    closeDropdown();
+                    router.push("/dashboard/ecoliview");
+                  }}
+                  className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+                >
+                  View More
+                </DropdownItem>
+              </Dropdown>
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,25 +1,24 @@
 import Link from "next/link";
 import AIDetection from "@/components/ecommerce/AIDetection";
+import { ArrowLeftIcon } from "lucide-react";
 
 export const metadata = { title: "AI Detection View • Colivera" };
 
 export default function AIDetectionViewPage() {
   return (
     <div className="px-4 sm:px-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
-          AI Detection – Detail
-        </h1>
+      <div className="mb-6">
         <Link
           href="/dashboard"
-          className="text-sm text-primary-600 hover:underline"
+          className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-500 transition-colors"
         >
-          ← Back to Dashboard
+          <ArrowLeftIcon className="size-4" />
+          Back to Dashboard
         </Link>
       </div>
 
       {/* Reuse radial chart kamu */}
-      <AIDetection />
+      <AIDetection hideDropdown={true} />
 
       {/* Placeholder: nanti kita isi penjelasan model & log prediksi */}
       <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">

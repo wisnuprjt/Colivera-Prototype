@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -8,58 +9,131 @@ import {
   TableRow,
 } from "../ui/table";
 import Badge from "../ui/badge/Badge";
-import Image from "next/image";
 
-// struktur dummy
+// Interface untuk data sensor dari API
+interface SensorData {
+  timestamp: string;
+  temp_c: number;
+  do_mgl: number;
+  ph: number;
+  conductivity_uscm: number;
+  totalcoliform_mv: number;
+}
+
+// struktur untuk tampilan tabel
 interface SensorLog {
   id: number;
   parameter: string;
   value: string;
   unit: string;
-  status: "Normal" | "Stable" | "Safe" | "Optimal";
+  status: "Normal" | "Stable" | "Safe" | "Optimal" | "Warning" | "High" | "Low";
   icon: string;
   timestamp: string;
 }
 
 export default function RecentSensorActivity() {
-  const sensorData: SensorLog[] = [
+  const [sensorData, setSensorData] = useState<SensorData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSensorData = async () => {
+      try {
+        const response = await fetch("/api/sensor", {
+          method: 'GET',
+          cache: 'no-cache',
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.status === "success" && result.data) {
+          setSensorData(result.data);
+        }
+      } catch (err) {
+        console.error("Error fetching sensor data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSensorData();
+    
+    // Auto-refresh setiap 30 detik
+    const interval = setInterval(fetchSensorData, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Helper function untuk format timestamp
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('id-ID', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).replace(',', '');
+  };
+
+  // Helper function untuk determine status
+  const getStatus = (param: string, value: number): SensorLog['status'] => {
+    switch(param) {
+      case "Konduktivitas":
+        return value <= 1500 ? "Normal" : "High";
+      case "Suhu":
+        return "Stable";
+      case "Dissolved Oxygen (DO)":
+        return value >= 5 ? "Safe" : "Low";
+      case "pH":
+        return (value >= 6.5 && value <= 8.5) ? "Optimal" : "Warning";
+      default:
+        return "Normal";
+    }
+  };
+
+  // Map data dari API ke format tabel
+  const tableData: SensorLog[] = sensorData ? [
     {
       id: 1,
       parameter: "Konduktivitas",
-      value: "620",
+      value: sensorData.conductivity_uscm.toFixed(1),
       unit: "µS/cm",
-      status: "Normal",
+      status: getStatus("Konduktivitas", sensorData.conductivity_uscm),
       icon: "⚡",
-      timestamp: "2025-10-26 18:30",
+      timestamp: formatTimestamp(sensorData.timestamp),
     },
     {
       id: 2,
       parameter: "Suhu",
-      value: "27.8",
+      value: sensorData.temp_c.toFixed(1),
       unit: "°C",
-      status: "Stable",
+      status: getStatus("Suhu", sensorData.temp_c),
       icon: "🌡️",
-      timestamp: "2025-10-26 18:30",
+      timestamp: formatTimestamp(sensorData.timestamp),
     },
     {
       id: 3,
       parameter: "Dissolved Oxygen (DO)",
-      value: "6.2",
+      value: sensorData.do_mgl.toFixed(1),
       unit: "mg/L",
-      status: "Safe",
+      status: getStatus("Dissolved Oxygen (DO)", sensorData.do_mgl),
       icon: "💨",
-      timestamp: "2025-10-26 18:30",
+      timestamp: formatTimestamp(sensorData.timestamp),
     },
     {
       id: 4,
       parameter: "pH",
-      value: "7.2",
+      value: sensorData.ph.toFixed(1),
       unit: "",
-      status: "Optimal",
+      status: getStatus("pH", sensorData.ph),
       icon: "🧪",
-      timestamp: "2025-10-26 18:30",
+      timestamp: formatTimestamp(sensorData.timestamp),
     },
-  ];
+  ] : [];
 
   return (
     //min-h to untuk ngatur tinggi minimal tabel biar ga terlalu kecil
@@ -107,44 +181,73 @@ export default function RecentSensorActivity() {
           </TableHeader>
 
           <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {sensorData.map((sensor) => (
-              <TableRow key={sensor.id}>
-                <TableCell className="py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-[40px] w-[40px] overflow-hidden rounded-md bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-xl">
-                      {sensor.icon}
+            {isLoading ? (
+              // Loading skeleton
+              Array.from({ length: 4 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell className="py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-[40px] w-[40px] rounded-md bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+                      <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                     </div>
-                    <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                      {sensor.parameter}
-                    </p>
-                  </div>
-                </TableCell>
+                  </TableCell>
+                  <TableCell className="py-3">
+                    <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  </TableCell>
+                  <TableCell className="py-3">
+                    <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                  </TableCell>
+                  <TableCell className="py-3">
+                    <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : tableData.length > 0 ? (
+              tableData.map((sensor) => (
+                <TableRow key={sensor.id}>
+                  <TableCell className="py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-[40px] w-[40px] overflow-hidden rounded-md bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-xl">
+                        {sensor.icon}
+                      </div>
+                      <p className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                        {sensor.parameter}
+                      </p>
+                    </div>
+                  </TableCell>
 
-                <TableCell className="py-3 text-gray-700 dark:text-gray-300">
-                  {sensor.value} {sensor.unit}
-                </TableCell>
+                  <TableCell className="py-3 text-gray-700 dark:text-gray-300">
+                    {sensor.value} {sensor.unit}
+                  </TableCell>
 
-                <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                  <Badge
-                    size="sm"
-                    color={
-                      sensor.status === "Normal" ||
-                      sensor.status === "Stable" ||
-                      sensor.status === "Safe" ||
-                      sensor.status === "Optimal"
-                        ? "success"
-                        : "warning"
-                    }
-                  >
-                    {sensor.status}
-                  </Badge>
-                </TableCell>
+                  <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                    <Badge
+                      size="sm"
+                      color={
+                        sensor.status === "Normal" ||
+                        sensor.status === "Stable" ||
+                        sensor.status === "Safe" ||
+                        sensor.status === "Optimal"
+                          ? "success"
+                          : "warning"
+                      }
+                    >
+                      {sensor.status}
+                    </Badge>
+                  </TableCell>
 
-                <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                  {sensor.timestamp}
+                  <TableCell className="py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                    {sensor.timestamp}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell className="py-8 text-center text-gray-500">
+                  <div className="col-span-4">Belum ada data sensor</div>
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
