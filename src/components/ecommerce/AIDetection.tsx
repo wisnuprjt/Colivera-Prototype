@@ -42,11 +42,18 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
           cache: 'no-cache',
         });
         
+        const sensorResult = await sensorResponse.json();
+        
+        // Handle timeout
+        if (sensorResponse.status === 504) {
+          console.warn("Sensor API timeout, will retry in 30s...");
+          setIsLoading(false);
+          return; // Keep last known prediction
+        }
+        
         if (!sensorResponse.ok) {
           throw new Error(`Failed to fetch sensor data: ${sensorResponse.status}`);
         }
-        
-        const sensorResult = await sensorResponse.json();
         
         if (sensorResult.status === "no_data") {
           console.log("No sensor data available yet, will retry in 30s...");
@@ -85,12 +92,29 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
           body: JSON.stringify(requestData),
         });
 
-        if (!predictionResponse.ok) {
-          throw new Error("Prediction API error");
+        const result = await predictionResponse.json();
+        
+        // Handle timeout
+        if (predictionResponse.status === 504) {
+          console.warn("Prediction API timeout, will retry in 30s...");
+          setIsLoading(false);
+          return; // Keep last known prediction
         }
 
-        const result = await predictionResponse.json();
+        if (!predictionResponse.ok) {
+          console.error("Prediction API error:", predictionResponse.status);
+          setIsLoading(false);
+          return; // Keep last known status
+        }
+
         console.log("AI Response:", result);
+
+        // Handle error response from API
+        if (result.status === "error") {
+          console.error("API returned error:", result.message);
+          setIsLoading(false);
+          return; // Keep last known status
+        }
 
         const potable = result.ai_detection?.potable ?? true;
         
@@ -101,7 +125,7 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
           newPrediction = 100;
           newStatus = "AMAN";
         } else {
-          newPrediction = 30;
+          newPrediction = 100;
           newStatus = "BAHAYA";
         }
 

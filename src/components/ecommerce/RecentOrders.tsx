@@ -43,11 +43,17 @@ export default function RecentSensorActivity() {
           cache: 'no-cache',
         });
         
+        const result = await response.json();
+        
+        // Handle timeout gracefully
+        if (response.status === 504) {
+          console.warn("Sensor API timeout in RecentOrders, will retry in 30s...");
+          return; // Keep last known data
+        }
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
-        const result = await response.json();
         
         if (result.status === "success" && result.data) {
           setSensorData(result.data);

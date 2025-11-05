@@ -3,7 +3,6 @@ import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
 import React from "react";
 import AIDetection from "@/components/ecommerce/AIDetection";
 import EColiHistory from "@/components/ecommerce/TotalColiformMPN";
-// import TotalColiform from "@/components/ecommerce/TotalColiform";
 import RecentOrders from "@/components/ecommerce/RecentOrders";
 import Lokasi from "@/components/ecommerce/Lokasi";
 

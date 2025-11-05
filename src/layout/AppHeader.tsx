@@ -2,6 +2,7 @@
 // import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import NotificationDropdown from "@/components/header/NotificationDropdown";
 import UserDropdown from "@/components/header/UserDropdown";
+import ManualOverrideButton from "@/components/header/ManualOverrideButton";
 import { useSidebar } from "@/context/SidebarContext";
 import Image from "next/image";
 import Link from "next/link";
@@ -164,6 +165,9 @@ const AppHeader: React.FC = () => {
             {/* <!-- Dark Mode Toggler --> */}
             {/* <ThemeToggleButton />   */}
             {/* <!-- Dark Mode Toggler --> */}
+
+            {/* <!-- Manual Override Button --> */}
+            <ManualOverrideButton />
 
            <NotificationDropdown /> 
             {/* <!-- Notification Menu Area --> */}

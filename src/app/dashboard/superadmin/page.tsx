@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Button from "@/components/ui/button/Button";
+import axiosInstance from "@/lib/axios";
 
 // import modal components
 import AddUserModal from "@/components/superadminmodal/AddUserModal";
@@ -67,23 +68,17 @@ export default function UsersPage() {
       params.append("limit", "10");
 
       console.log("📊 Loading users...");
-      const res = await fetch(`${API}/api/users?${params.toString()}`, {
-        credentials: "include",
-      });
+      const res = await axiosInstance.get(`/api/users?${params.toString()}`);
 
-      if (res.ok) {
-        const data = await res.json();
-        console.log("✅ Users loaded:", data.length);
-        setRows(Array.isArray(data) ? data : []);
+      if (res.data && Array.isArray(res.data)) {
+        console.log("✅ Users loaded:", res.data.length);
+        setRows(res.data);
         
         // Calculate stats
-        const total = data.length;
-        const admins = data.filter((u: any) => u.role === 'admin').length;
-        const superadmins = data.filter((u: any) => u.role === 'superadmin').length;
+        const total = res.data.length;
+        const admins = res.data.filter((u: any) => u.role === 'admin').length;
+        const superadmins = res.data.filter((u: any) => u.role === 'superadmin').length;
         setStats({ total, admins, superadmins, activeToday: Math.floor(total * 0.7) });
-      } else {
-        console.error("❌ Failed to load users:", res.status);
-        setRows([]);
       }
     } catch (err) {
       console.error("❌ Load users error:", err);
@@ -128,47 +123,33 @@ export default function UsersPage() {
     }
     
     try {
-      const res = await fetch(`${API}/api/users`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const res = await axiosInstance.post('/api/users', formData);
       
-      if (res.ok) {
+      if (res.data) {
         alert("✅ User berhasil ditambahkan!");
         setIsAddOpen(false);
         setNewUser({ name: "", email: "", password: "", role: "admin" });
         load();
-      } else {
-        const data = await res.json();
-        alert(`Gagal: ${data.message}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Terjadi kesalahan saat menambah user.");
+      const message = err.response?.data?.message || "Terjadi kesalahan saat menambah user.";
+      alert(`Gagal: ${message}`);
     }
   };
 
   const handleEditUser = async (updatedUser: any) => {
     try {
-      const res = await fetch(`${API}/api/users/${updatedUser.id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedUser),
-      });
+      const res = await axiosInstance.patch(`/api/users/${updatedUser.id}`, updatedUser);
       
-      if (res.ok) {
+      if (res.data) {
         alert("✅ Data user berhasil diperbarui!");
         setIsEditOpen(false);
         load();
-      } else {
-        alert("Gagal memperbarui user.");
       }
     } catch (err) {
       console.error(err);
-      alert("Terjadi kesalahan saat update user.");
+      alert("Gagal memperbarui user.");
     }
   };
 
@@ -178,42 +159,31 @@ export default function UsersPage() {
     }
     
     try {
-      const res = await fetch(`${API}/api/users/${id}/password`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newPassword }),
-      });
+      const res = await axiosInstance.patch(`/api/users/${id}/password`, { newPassword });
       
-      if (res.ok) {
+      if (res.data) {
         alert("✅ Password berhasil direset!");
         setIsResetOpen(false);
         setPassword("");
-      } else {
-        alert("Gagal reset password.");
       }
     } catch (err) {
       console.error(err);
-      alert("Terjadi kesalahan saat reset password.");
+      alert("Gagal reset password.");
     }
   };
 
   const handleDeleteUser = async (id: string) => {
     try {
-      const res = await fetch(`${API}/api/users/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const res = await axiosInstance.delete(`/api/users/${id}`);
       
-      if (res.ok) {
+      if (res.data) {
         alert("✅ User berhasil dihapus!");
         setIsDeleteOpen(false);
         load();
-      } else {
-        alert("Gagal menghapus user.");
       }
     } catch (err) {
       console.error(err);
+      alert("Gagal menghapus user.");
     }
   };
 

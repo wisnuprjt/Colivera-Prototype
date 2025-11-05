@@ -36,11 +36,19 @@ export const EcommerceMetrics = () => {
           cache: 'no-cache',
         });
         
+        const result = await response.json();
+        
+        // Handle different response statuses
+        if (response.status === 504) {
+          // Gateway timeout - HuggingFace cold start
+          console.warn("API timeout, will retry in 30s...");
+          setError("Server sedang memuat (cold start). Menunggu...");
+          return; // Keep last known data
+        }
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
-        const result = await response.json();
         
         if (result.status === "success" && result.data) {
           setSensorData(result.data);
