@@ -41,6 +41,7 @@ export default function RecentSensorActivity() {
         const response = await fetch("/api/sensor", {
           method: 'GET',
           cache: 'no-cache',
+          credentials: 'include', // Kirim cookies
         });
         
         const result = await response.json();
@@ -51,8 +52,21 @@ export default function RecentSensorActivity() {
           return; // Keep last known data
         }
         
+        // Handle service unavailable (network error)
+        if (response.status === 503) {
+          console.warn("Sensor API unavailable in RecentOrders, will retry in 30s...");
+          return; // Keep last known data
+        }
+        
+        // Handle server error gracefully
+        if (response.status === 500) {
+          console.error("Sensor API error 500:", result.message);
+          return; // Keep last known data, will auto-retry
+        }
+        
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          console.error("Sensor API error:", response.status);
+          return; // Keep last known data
         }
         
         if (result.status === "success" && result.data) {
@@ -60,6 +74,7 @@ export default function RecentSensorActivity() {
         }
       } catch (err) {
         console.error("Error fetching sensor data:", err);
+        // Don't throw, just log and retry in 30s
       } finally {
         setIsLoading(false);
       }

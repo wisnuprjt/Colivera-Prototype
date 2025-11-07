@@ -12,8 +12,21 @@ import HapusUserModal from "@/components/superadminmodal/HapusUserModal";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
-// Add keyframes for animations - DISABLED for static UI
+// Add keyframes for animations
 const styles = `
+  @keyframes spin-slow {
+    from {
+      transform: rotate(360deg);
+    }
+    to {
+      transform: rotate(0deg);
+    }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 2s linear infinite;
+  }
+  
   .animate-fadeInUp {
     opacity: 1;
   }
@@ -190,10 +203,40 @@ export default function UsersPage() {
   // ====== AUTH CHECK ======
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-gray-900 dark:via-emerald-900 dark:to-teal-900">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="inline-block rounded-full h-16 w-16 border-4 border-emerald-600 border-t-transparent"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">Memuat...</p>
+          {/* Animated Loading Spinner */}
+          <div className="relative inline-flex items-center justify-center">
+            {/* Outer rotating ring */}
+            <div className="absolute w-20 h-20 border-4 border-slate-200 dark:border-gray-700 rounded-full"></div>
+            <div className="absolute w-20 h-20 border-4 border-t-[#4F7C82] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+            
+            {/* Middle pulse ring */}
+            <div className="absolute w-16 h-16 bg-[#4F7C82]/10 dark:bg-[#4F7C82]/20 rounded-full animate-pulse"></div>
+            
+            {/* Inner rotating ring (opposite direction) */}
+            <div className="w-12 h-12 border-3 border-t-[#93B1B5] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin-slow"></div>
+            
+            {/* Center dot */}
+            <div className="absolute w-3 h-3 bg-gradient-to-br from-[#4F7C82] to-[#0B2E33] rounded-full animate-pulse"></div>
+          </div>
+          
+          {/* Loading Text */}
+          <div className="mt-6">
+            <p className="text-lg font-semibold text-gray-800 dark:text-gray-200 animate-pulse">
+              Memuat Data...
+            </p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Mohon tunggu sebentar
+            </p>
+          </div>
+          
+          {/* Loading dots animation */}
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <div className="w-2 h-2 bg-[#4F7C82] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 bg-[#4F7C82] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-2 h-2 bg-[#4F7C82] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          </div>
         </div>
       </div>
     );

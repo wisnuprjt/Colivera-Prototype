@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-// DataPoint = hasil mapping dari DB backend
+// DataPoint = hasil mapping dari API HuggingFace
 interface DataPoint {
   time: string;
   cfu: number;
@@ -18,8 +18,6 @@ interface DataPoint {
 interface TotalColiformMPNProps {
   hideDropdown?: boolean;
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000/api";
 
 export default function TotalColiformMPN({ hideDropdown = false }: TotalColiformMPNProps) {
   const router = useRouter();
@@ -30,25 +28,36 @@ export default function TotalColiformMPN({ hideDropdown = false }: TotalColiform
   const closeDropdown = () => setIsOpen(false);
 
   // ==========================
-  // Fetch Data dari Backend
+  // Fetch Data dari HuggingFace via Next.js API
   // ==========================
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch(`${API_BASE}/coliform/latest`);
+        const res = await fetch("/api/sensor", {
+          method: 'GET',
+          cache: 'no-cache',
+          credentials: 'include',
+        });
+        
         const json = await res.json();
 
-        // mapping data dari backend ke chart format
-        const mapped: DataPoint[] = json.data.map((d: any) => ({
-          time: new Date(d.timestamp).toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-          }),
-          cfu: d.mpn_value,
-        }));
+        if (json.status === "success" && json.data) {
+          // Simpan data terbaru ke dalam array
+          const newPoint: DataPoint = {
+            time: new Date(json.data.timestamp).toLocaleTimeString("id-ID", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }),
+            cfu: json.data.totalcoliform_mv,
+          };
 
-        setData(mapped.reverse()); // agar urut dari lama → terbaru
+          setData((prev) => {
+            // Simpan maksimal 20 data point
+            const updated = [...prev, newPoint];
+            return updated.slice(-20);
+          });
+        }
       } catch (error) {
         console.error("Error fetching Total Coliform:", error);
       } finally {
@@ -58,8 +67,8 @@ export default function TotalColiformMPN({ hideDropdown = false }: TotalColiform
 
     fetchData();
 
-    // optional auto-refresh tiap 10 detik
-    const interval = setInterval(fetchData, 10000);
+    // Auto-refresh setiap 30 detik (sesuai dengan interval sensor)
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -126,7 +135,7 @@ export default function TotalColiformMPN({ hideDropdown = false }: TotalColiform
       <div className="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Total Coliform
+            Total Coliform (Sensor)
           </h3>
           <p className="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">(MPN)</p>
         </div>

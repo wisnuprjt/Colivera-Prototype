@@ -40,6 +40,7 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
         const sensorResponse = await fetch("/api/sensor", {
           method: 'GET',
           cache: 'no-cache',
+          credentials: 'include', // Kirim cookies
         });
         
         const sensorResult = await sensorResponse.json();
@@ -51,8 +52,24 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
           return; // Keep last known prediction
         }
         
+        // Handle service unavailable (network error)
+        if (sensorResponse.status === 503) {
+          console.warn("Service unavailable, will retry in 30s...");
+          setIsLoading(false);
+          return; // Keep last known prediction
+        }
+        
+        // Handle server error
+        if (sensorResponse.status === 500) {
+          console.error("Sensor API error 500:", sensorResult.message);
+          setIsLoading(false);
+          return; // Keep last known prediction, will auto-retry
+        }
+        
         if (!sensorResponse.ok) {
-          throw new Error(`Failed to fetch sensor data: ${sensorResponse.status}`);
+          console.error("Failed to fetch sensor data:", sensorResponse.status);
+          setIsLoading(false);
+          return;
         }
         
         if (sensorResult.status === "no_data") {
@@ -68,7 +85,9 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
         }
         
         if (sensorResult.status !== "success" || !sensorResult.data) {
-          throw new Error("Invalid sensor data format");
+          console.error("Invalid sensor data format");
+          setIsLoading(false);
+          return;
         }
         
         const sensorData: SensorData = sensorResult.data;
@@ -89,6 +108,7 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: 'include', // Kirim cookies
           body: JSON.stringify(requestData),
         });
 
@@ -99,6 +119,20 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
           console.warn("Prediction API timeout, will retry in 30s...");
           setIsLoading(false);
           return; // Keep last known prediction
+        }
+        
+        // Handle service unavailable (network error)
+        if (predictionResponse.status === 503) {
+          console.warn("Prediction service unavailable, will retry in 30s...");
+          setIsLoading(false);
+          return; // Keep last known prediction
+        }
+        
+        // Handle server error
+        if (predictionResponse.status === 500) {
+          console.error("Prediction API error 500:", result.message);
+          setIsLoading(false);
+          return; // Keep last known prediction, will auto-retry
         }
 
         if (!predictionResponse.ok) {

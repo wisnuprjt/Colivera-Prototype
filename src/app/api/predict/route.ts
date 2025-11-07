@@ -1,80 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Retry helper function
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2) {
-  let lastError;
-  
-  for (let i = 0; i <= maxRetries; i++) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-      
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`API responded with status: ${response.status}`);
-      }
-      
-      return response;
-    } catch (error) {
-      lastError = error;
-      
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.log(`Predict attempt ${i + 1} timed out, retrying...`);
-      }
-      
-      if (i < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        console.log(`Retrying predict... (${i + 1}/${maxRetries})`);
-      }
-    }
-  }
-  
-  throw lastError;
-}
+// HuggingFace API URL
+const HUGGINGFACE_API_URL = 'https://gary29-water-quality-ai.hf.space';
 
 export async function POST(request: NextRequest) {
   try {
+    // Get request body with sensor data
     const body = await request.json();
     
-    const response = await fetchWithRetry(
-      'https://gary29-water-quality-ai.hf.space/predict',
-      {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-        cache: 'no-store',
+    // Fetch directly from HuggingFace API with sensor data and timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for prediction
+    
+    const response = await fetch(`${HUGGINGFACE_API_URL}/predict`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
       },
-      2 // Max 2 retries
-    );
+      body: JSON.stringify(body),
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
 
     const data = await response.json();
+    
+    // Handle different status codes
+    if (response.status === 504) {
+      return NextResponse.json(
+        { 
+          status: 'error', 
+          message: 'Prediction timeout - HuggingFace Space sedang cold start.' 
+        },
+        { status: 504 }
+      );
+    }
+    
+    if (!response.ok) {
+      return NextResponse.json(
+        { status: 'error', message: data.message || 'Prediction API error' },
+        { status: response.status }
+      );
+    }
+    
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error calling prediction API:', error);
+    console.error('Error fetching prediction:', error);
     
+    // Handle abort/timeout
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
         return NextResponse.json(
           { 
             status: 'error', 
-            message: 'Prediction timeout - HuggingFace Space sedang cold start. Akan retry otomatis.' 
+            message: 'Prediction timeout. HuggingFace Space mungkin sedang sleep.' 
           },
           { status: 504 }
+        );
+      }
+      
+      // Network errors
+      if (error.message.includes('fetch')) {
+        return NextResponse.json(
+          { 
+            status: 'error', 
+            message: 'Tidak dapat terhubung ke HuggingFace Space untuk prediksi.' 
+          },
+          { status: 503 }
         );
       }
     }
     
     return NextResponse.json(
-      { status: 'error', message: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        status: 'error', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      },
       { status: 500 }
     );
   }

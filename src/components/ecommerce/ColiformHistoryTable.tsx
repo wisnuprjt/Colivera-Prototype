@@ -8,9 +8,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000/api"
 
 interface ColiformData {
   id: number;
-  sensor_id: string;
   mpn_value: number;
-  raw_voltage: number;
   timestamp: string;
   status: string;
 }
@@ -52,8 +50,6 @@ export default function ColiformHistoryTable() {
     // Map data agar rapi di Excel
     const exportData = data.map((item) => ({
       Timestamp: new Date(item.timestamp).toLocaleString("id-ID"),
-      "Sensor ID": item.sensor_id,
-      "Tegangan (V)": item.raw_voltage,
       "Total Coliform (MPN)": item.mpn_value,
       Status: item.status,
     }));
@@ -112,8 +108,6 @@ export default function ColiformHistoryTable() {
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/[0.05]">
                 <th className="py-2 px-3 text-left">Timestamp</th>
-                <th className="py-2 px-3 text-left">Sensor ID</th>
-                <th className="py-2 px-3 text-left">Tegangan (V)</th>
                 <th className="py-2 px-3 text-left">MPN</th>
                 <th className="py-2 px-3 text-left">Status</th>
               </tr>
@@ -131,8 +125,6 @@ export default function ColiformHistoryTable() {
                       second: "2-digit",
                     })}
                   </td>
-                  <td className="py-2 px-3">{item.sensor_id}</td>
-                  <td className="py-2 px-3">{item.raw_voltage ?? "-"} V</td>
                   <td className="py-2 px-3 font-medium">{item.mpn_value}</td>
                   <td
                     className={`py-2 px-3 ${

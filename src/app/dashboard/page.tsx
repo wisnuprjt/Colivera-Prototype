@@ -3,6 +3,7 @@ import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
 import React from "react";
 import AIDetection from "@/components/ecommerce/AIDetection";
 import EColiHistory from "@/components/ecommerce/TotalColiformMPN";
+import TotalColiformAI from "@/components/ecommerce/TotalColiformAI";
 import RecentOrders from "@/components/ecommerce/RecentOrders";
 import Lokasi from "@/components/ecommerce/Lokasi";
 
@@ -25,14 +26,19 @@ export default function Ecommerce() {
         {/* Left Column */}
         <div className="space-y-6">
           <EColiHistory />
-          <RecentOrders />
+          <TotalColiformAI />
         </div>
 
         {/* Right Column */}
         <div className="space-y-6">
           <AIDetection />
-          <Lokasi />
+          <RecentOrders />
         </div>
+      </div>
+
+      {/* Bottom Section - Lokasi */}
+      <div className="w-full">
+        <Lokasi />
       </div>
     </div>
   );
