@@ -161,7 +161,7 @@ export default function TotalColiformAI({ hideDropdown = false }: TotalColiformA
                 <DropdownItem
                   onItemClick={() => {
                     closeDropdown();
-                    router.push("/dashboard/ai-prediction");
+                    router.push("/dashboard/aidetectionview");
                   }}
                   className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
                 >

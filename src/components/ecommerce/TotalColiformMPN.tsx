@@ -28,38 +28,50 @@ export default function TotalColiformMPN({ hideDropdown = false }: TotalColiform
   const closeDropdown = () => setIsOpen(false);
 
   // ==========================
-  // Fetch Data dari HuggingFace via Next.js API
+  // Fetch Data History dari Database (via Backend)
   // ==========================
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch("/api/sensor", {
+        console.log("🔄 Fetching coliform history from backend...");
+        
+        // Fetch history dari backend (terlama → terbaru untuk grafik)
+        const res = await fetch("http://localhost:4000/api/sensor/coliform/history?limit=20", {
           method: 'GET',
           cache: 'no-cache',
           credentials: 'include',
         });
         
+        console.log("📡 Response status:", res.status);
+        
         const json = await res.json();
+        console.log("📊 Backend response:", json);
 
         if (json.status === "success" && json.data) {
-          // Simpan data terbaru ke dalam array
-          const newPoint: DataPoint = {
-            time: new Date(json.data.timestamp).toLocaleTimeString("id-ID", {
+          console.log("✅ Data received:", json.data.length, "records");
+          
+          // Reverse data supaya urutan dari terlama → terbaru (untuk grafik)
+          const reversedData = [...json.data].reverse();
+          
+          // Mapping dari data backend
+          const mappedData: DataPoint[] = reversedData.map((item: any) => ({
+            time: new Date(item.timestamp).toLocaleString("id-ID", {
+              day: "2-digit",
+              month: "2-digit",
               hour: "2-digit",
               minute: "2-digit",
-              second: "2-digit",
             }),
-            cfu: json.data.totalcoliform_mv,
-          };
+            cfu: item.mpn_value
+          }));
 
-          setData((prev) => {
-            // Simpan maksimal 20 data point
-            const updated = [...prev, newPoint];
-            return updated.slice(-20);
-          });
+          console.log("🎨 Mapped data for chart:", mappedData);
+          setData(mappedData);
+          console.log("✅ Coliform data loaded:", mappedData.length, "points");
+        } else {
+          console.warn("⚠️ No data in response or status not success");
         }
       } catch (error) {
-        console.error("Error fetching Total Coliform:", error);
+        console.error("❌ Error fetching Total Coliform History:", error);
       } finally {
         setLoading(false);
       }
@@ -67,8 +79,8 @@ export default function TotalColiformMPN({ hideDropdown = false }: TotalColiform
 
     fetchData();
 
-    // Auto-refresh setiap 30 detik (sesuai dengan interval sensor)
-    const interval = setInterval(fetchData, 30000);
+    // Auto-refresh setiap 1 menit (sesuai dengan cron job interval)
+    const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, []);
 
