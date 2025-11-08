@@ -73,15 +73,24 @@ export default function AIDetectionViewPage() {
               </h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Safe (Aman)</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span className="text-gray-600 dark:text-gray-400">Safe (Aman)</span>
+                  </div>
                   <span className="font-semibold text-green-600 dark:text-green-400">≤ 0.70 MPN</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Warning (Waspada)</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                    <span className="text-gray-600 dark:text-gray-400">Warning (Waspada)</span>
+                  </div>
                   <span className="font-semibold text-amber-600 dark:text-amber-400">0.71 - 0.99 MPN</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Danger (Bahaya)</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <span className="text-gray-600 dark:text-gray-400">Danger (Bahaya)</span>
+                  </div>
                   <span className="font-semibold text-red-600 dark:text-red-400">≥ 1.0 MPN</span>
                 </div>
               </div>

@@ -27,7 +27,7 @@ interface AIDetectionProps {
 export default function AIDetection({ hideDropdown = false }: AIDetectionProps) {
   const router = useRouter();
   const [prediction, setPrediction] = useState(100);
-  const [status, setStatus] = useState<"AMAN" | "BAHAYA">("AMAN");
+  const [status, setStatus] = useState<"AMAN" | "WASPADA" | "BAHAYA">("AMAN");
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -150,16 +150,18 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
           return; // Keep last known status
         }
 
-        const potable = result.ai_detection?.potable ?? true;
+        // Temporary logic - will be replaced by backend status
+        const predictionValue = result.prediction?.total_coliform_mpn_100ml ?? 0;
         
-        let newPrediction = 0;
-        let newStatus: "AMAN" | "BAHAYA" = "BAHAYA";
+        let newPrediction = 100;
+        let newStatus: "AMAN" | "WASPADA" | "BAHAYA" = "AMAN";
         
-        if (potable) {
-          newPrediction = 100;
+        // Determine status based on MPN value
+        if (predictionValue <= 0.70) {
           newStatus = "AMAN";
-        } else {
-          newPrediction = 100;
+        } else if (predictionValue >= 0.71 && predictionValue <= 0.99) {
+          newStatus = "WASPADA";
+        } else if (predictionValue >= 1.0) {
           newStatus = "BAHAYA";
         }
 
@@ -196,14 +198,15 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
   const series = [prediction];
   
   const getStatusColor = () => {
-    if (status === "AMAN") return "success";
-    return "danger";
+    if (status === "AMAN") return "#10B981"; // Green
+    if (status === "WASPADA") return "#F59E0B"; // Amber/Yellow
+    return "#EF4444"; // Red
   };
   
-  const statusColor = getStatusColor();
+  const chartColor = getStatusColor();
   
   const options: ApexOptions = {
-    colors: [statusColor === "success" ? "#10B981" : "#EF4444"],
+    colors: [chartColor],
     chart: {
       fontFamily: "Outfit, sans-serif",
       type: "radialBar",
@@ -242,7 +245,7 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
     },
     fill: {
       type: "solid",
-      colors: [statusColor === "success" ? "#10B981" : "#EF4444"],
+      colors: [chartColor],
     },
     stroke: {
       lineCap: "round",
@@ -317,8 +320,10 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
               </div>
 
               <span className={`absolute left-1/2 top-full -translate-x-1/2 -translate-y-[95%] rounded-full px-3 py-1 text-xs font-medium ${
-                statusColor === "success" 
-                  ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500"
+                status === "AMAN" 
+                  ? "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-500"
+                  : status === "WASPADA"
+                  ? "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-500"
                   : "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-500"
               }`}>
                 {status}

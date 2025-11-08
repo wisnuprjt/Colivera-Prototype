@@ -128,11 +128,13 @@ export default function ColiformHistoryTable() {
                   <td className="py-2 px-3 font-medium">{item.mpn_value}</td>
                   <td
                     className={`py-2 px-3 ${
-                      item.status === "Critical"
-                        ? "text-red-500"
-                        : item.status === "Warning"
-                        ? "text-yellow-500"
-                        : "text-green-600"
+                      item.status === "Bahaya" || item.status === "Critical"
+                        ? "text-red-500 dark:text-red-400"
+                        : item.status === "Waspada" || item.status === "Warning"
+                        ? "text-amber-500 dark:text-amber-400"
+                        : item.status === "Aman" || item.status === "Safe"
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-green-600 dark:text-green-400"
                     } font-medium`}
                   >
                     {item.status}
