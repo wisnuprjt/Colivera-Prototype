@@ -36,85 +36,58 @@ export default function TotalColiformAI({ hideDropdown = false }: TotalColiformA
   const closeDropdown = () => setIsOpen(false);
 
   // ==========================
-  // Fetch Data dari HuggingFace via Next.js API
+  // Fetch Data History dari Database (via Backend)
+  // Filter: source=ai_prediction untuk data AI prediction saja
   // ==========================
   useEffect(() => {
-    async function fetchPrediction() {
+    async function fetchData() {
       try {
-        console.log("TotalColiformAI: Fetching sensor data...");
+        console.log("🔄 Fetching AI prediction history from backend...");
         
-        // 1. Get sensor data
-        const sensorRes = await fetch("/api/sensor", {
+        // ✨ Fetch history dari backend dengan filter source=ai_prediction
+        const res = await fetch("http://localhost:4000/api/sensor/coliform/history?source=ai_prediction&limit=20", {
           method: 'GET',
           cache: 'no-cache',
           credentials: 'include',
         });
         
-        const sensorJson = await sensorRes.json();
-        console.log("TotalColiformAI: Sensor response:", sensorJson);
+        console.log("📡 Response status:", res.status);
+        
+        const json = await res.json();
+        console.log("📊 Backend response:", json);
 
-        if (sensorJson.status === "success" && sensorJson.data) {
-          // 2. Send to prediction API
-          const requestData = {
-            temp_c: sensorJson.data.temp_c,
-            do_mgl: sensorJson.data.do_mgl,
-            ph: sensorJson.data.ph,
-            conductivity_uscm: sensorJson.data.conductivity_uscm,
-            totalcoliform_mpn_100ml: 0
-          };
+        if (json.status === "success" && json.chartData) {
+          console.log("✅ Data received:", json.chartData.length, "records");
           
-          console.log("TotalColiformAI: Sending to prediction API:", requestData);
-          
-          const predictionRes = await fetch("/api/predict", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: 'include',
-            body: JSON.stringify(requestData),
-          });
+          // Backend sudah return data dalam urutan lama → baru di chartData
+          // Mapping untuk chart dengan CI bands (set ke 0 karena data history tidak punya CI)
+          const mappedData: DataPoint[] = json.chartData.map((item: any) => ({
+            t: new Date(item.timestamp).toLocaleTimeString("id-ID", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            pred: item.mpn_value,
+            low: 0,  // CI bands tidak tersedia di history
+            high: 0
+          }));
 
-          const predictionJson = await predictionRes.json();
-          console.log("TotalColiformAI: Prediction response:", predictionJson);
-
-          // Response format: { prediction: { total_coliform_mpn_100ml: number } }
-          if (predictionJson.prediction && predictionJson.prediction.total_coliform_mpn_100ml !== undefined) {
-            // Simpan data terbaru ke dalam array dengan CI bands
-            const newPoint: DataPoint = {
-              t: new Date().toLocaleTimeString("id-ID", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              }),
-              pred: predictionJson.prediction.total_coliform_mpn_100ml,
-              low: predictionJson.prediction.ci90_low || 0,
-              high: predictionJson.prediction.ci90_high || 0,
-            };
-
-            console.log("TotalColiformAI: Adding new data point:", newPoint);
-
-            setData((prev) => {
-              // Simpan maksimal 20 data point
-              const updated = [...prev, newPoint];
-              return updated.slice(-20);
-            });
-          } else {
-            console.warn("TotalColiformAI: Invalid prediction response format", predictionJson);
-          }
+          console.log("🎨 Mapped data for chart:", mappedData);
+          setData(mappedData);
+          console.log("✅ AI Prediction (History) data loaded:", mappedData.length, "points");
         } else {
-          console.warn("TotalColiformAI: Invalid sensor data format");
+          console.warn("⚠️ No data in response or status not success");
         }
       } catch (error) {
-        console.error("TotalColiformAI: Error fetching AI Prediction:", error);
+        console.error("❌ Error fetching Total Coliform (AI Prediction) History:", error);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchPrediction();
+    fetchData();
 
-    // Auto-refresh setiap 30 detik (sesuai dengan interval sensor)
-    const interval = setInterval(fetchPrediction, 30000);
+    // Auto-refresh setiap 1 menit (sesuai dengan cron job interval)
+    const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, []);
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AIDetection from "@/components/ecommerce/AIDetection";
 import TotalColiformAI from "@/components/ecommerce/TotalColiformAI";
+import AIDetectionHistoryTable from "@/components/ecommerce/AIDetectionHistoryTable";
 import { ArrowLeftIcon } from "lucide-react";
 
 export const metadata = { title: "AI Detection View • Colivera" };
@@ -32,7 +33,7 @@ export default function AIDetectionViewPage() {
             </p>
           </div>
           
-          {/* AI Detection - Full Width untuk lebih prominent */}
+          {/* AI Detection - Full Width */}
           <AIDetection hideDropdown={true} />
         </div>
 
@@ -42,25 +43,8 @@ export default function AIDetectionViewPage() {
           <div className="xl:col-span-2 space-y-6">
             <TotalColiformAI hideDropdown={true} />
             
-            {/* Keterangan & Log Prediksi Table */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-                <span className="text-xl">📋</span>
-                Keterangan & Log Prediksi
-              </h2>
-              
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {/* Table rows will be populated from backend/database */}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            {/* Keterangan & Log Prediksi Table - Diganti dengan komponen baru */}
+            <AIDetectionHistoryTable />
           </div>
 
           {/* Keterangan & Info Panel - Takes 1 column */}
@@ -73,24 +57,15 @@ export default function AIDetectionViewPage() {
               </h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span className="text-gray-600 dark:text-gray-400">Safe (Aman)</span>
-                  </div>
+                  <span className="text-gray-600 dark:text-gray-400">Safe (Aman)</span>
                   <span className="font-semibold text-green-600 dark:text-green-400">≤ 0.70 MPN</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                    <span className="text-gray-600 dark:text-gray-400">Warning (Waspada)</span>
-                  </div>
+                  <span className="text-gray-600 dark:text-gray-400">Warning (Waspada)</span>
                   <span className="font-semibold text-amber-600 dark:text-amber-400">0.71 - 0.99 MPN</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <span className="text-gray-600 dark:text-gray-400">Danger (Bahaya)</span>
-                  </div>
+                  <span className="text-gray-600 dark:text-gray-400">Danger (Bahaya)</span>
                   <span className="font-semibold text-red-600 dark:text-red-400">≥ 1.0 MPN</span>
                 </div>
               </div>
@@ -135,5 +110,3 @@ export default function AIDetectionViewPage() {
     </div>
   );
 }
-
-

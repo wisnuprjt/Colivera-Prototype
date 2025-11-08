@@ -29,14 +29,15 @@ export default function TotalColiformMPN({ hideDropdown = false }: TotalColiform
 
   // ==========================
   // Fetch Data History dari Database (via Backend)
+  // Filter: source=sensor untuk data dari sensor saja
   // ==========================
   useEffect(() => {
     async function fetchData() {
       try {
-        console.log("🔄 Fetching coliform history from backend...");
+        console.log("🔄 Fetching coliform history (SENSOR only) from backend...");
         
-        // Fetch history dari backend (terlama → terbaru untuk grafik)
-        const res = await fetch("http://localhost:4000/api/sensor/coliform/history?limit=20", {
+        // ✨ FILTER BY SOURCE: hanya ambil data dari sensor
+        const res = await fetch("http://localhost:4000/api/sensor/coliform/history?source=sensor&limit=20", {
           method: 'GET',
           cache: 'no-cache',
           credentials: 'include',
@@ -47,14 +48,12 @@ export default function TotalColiformMPN({ hideDropdown = false }: TotalColiform
         const json = await res.json();
         console.log("📊 Backend response:", json);
 
-        if (json.status === "success" && json.data) {
-          console.log("✅ Data received:", json.data.length, "records");
+        if (json.status === "success" && json.chartData) {
+          console.log("✅ Data received:", json.chartData.length, "records");
           
-          // Reverse data supaya urutan dari terlama → terbaru (untuk grafik)
-          const reversedData = [...json.data].reverse();
-          
+          // Backend sudah return data dalam urutan lama → baru di chartData
           // Mapping dari data backend
-          const mappedData: DataPoint[] = reversedData.map((item: any) => ({
+          const mappedData: DataPoint[] = json.chartData.map((item: any) => ({
             time: new Date(item.timestamp).toLocaleString("id-ID", {
               day: "2-digit",
               month: "2-digit",
@@ -66,12 +65,12 @@ export default function TotalColiformMPN({ hideDropdown = false }: TotalColiform
 
           console.log("🎨 Mapped data for chart:", mappedData);
           setData(mappedData);
-          console.log("✅ Coliform data loaded:", mappedData.length, "points");
+          console.log("✅ Coliform (Sensor) data loaded:", mappedData.length, "points");
         } else {
           console.warn("⚠️ No data in response or status not success");
         }
       } catch (error) {
-        console.error("❌ Error fetching Total Coliform History:", error);
+        console.error("❌ Error fetching Total Coliform (Sensor) History:", error);
       } finally {
         setLoading(false);
       }
