@@ -11,13 +11,13 @@ const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-interface SensorData {
-  timestamp: string;
-  temp_c: number;
-  do_mgl: number;
-  ph: number;
-  conductivity_uscm: number;
-  totalcoliform_mv: number;
+interface AIDetectionData {
+  mpn_value: number;
+  status: "Aman" | "Waspada" | "Bahaya";
+  severity: string;
+  reasons: string[];
+  recommendations: string[];
+  alternative_use: string[];
 }
 
 interface AIDetectionProps {
@@ -26,181 +26,107 @@ interface AIDetectionProps {
 
 export default function AIDetection({ hideDropdown = false }: AIDetectionProps) {
   const router = useRouter();
-  const [prediction, setPrediction] = useState(100);
-  const [status, setStatus] = useState<"AMAN" | "WASPADA" | "BAHAYA">("AMAN");
+  const [mpnValue, setMpnValue] = useState<number>(0);
+  const [status, setStatus] = useState<"Aman" | "Waspada" | "Bahaya">("Aman");
+  const [reasons, setReasons] = useState<string[]>([]);
+  const [recommendations, setRecommendations] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const fetchAndPredict = async () => {
+    const fetchAIDetection = async () => {
       setIsLoading(true);
       
       try {
-        // 1. Fetch latest sensor data menggunakan Next.js API route
-        const sensorResponse = await fetch("/api/sensor", {
+        // Fetch AI Detection data dari backend (includes predictions & recommendations)
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+        const response = await fetch(`${apiUrl}/api/sensor/ai-detection`, {
           method: 'GET',
           cache: 'no-cache',
-          credentials: 'include', // Kirim cookies
+          credentials: 'include',
         });
         
-        const sensorResult = await sensorResponse.json();
+        const result = await response.json();
         
         // Handle timeout
-        if (sensorResponse.status === 504) {
-          console.warn("Sensor API timeout, will retry in 30s...");
+        if (response.status === 504) {
+          console.warn("AI Detection API timeout, will retry in 30s...");
           setIsLoading(false);
-          return; // Keep last known prediction
+          return;
         }
         
-        // Handle service unavailable (network error)
-        if (sensorResponse.status === 503) {
+        // Handle service unavailable
+        if (response.status === 503) {
           console.warn("Service unavailable, will retry in 30s...");
           setIsLoading(false);
-          return; // Keep last known prediction
+          return;
         }
         
         // Handle server error
-        if (sensorResponse.status === 500) {
-          console.error("Sensor API error 500:", sensorResult.message);
-          setIsLoading(false);
-          return; // Keep last known prediction, will auto-retry
-        }
-        
-        if (!sensorResponse.ok) {
-          console.error("Failed to fetch sensor data:", sensorResponse.status);
+        if (response.status === 500) {
+          console.error("AI Detection API error 500:", result.message);
           setIsLoading(false);
           return;
         }
         
-        if (sensorResult.status === "no_data") {
-          console.log("No sensor data available yet, will retry in 30s...");
+        if (!response.ok) {
+          console.error("Failed to fetch AI detection:", response.status);
           setIsLoading(false);
           return;
         }
         
-        if (sensorResult.status === "error") {
-          console.error("API Error:", sensorResult.message);
+        if (result.status === "no_data") {
+          console.log("No sensor data available for AI detection yet");
           setIsLoading(false);
           return;
         }
         
-        if (sensorResult.status !== "success" || !sensorResult.data) {
-          console.error("Invalid sensor data format");
-          setIsLoading(false);
-          return;
-        }
-        
-        const sensorData: SensorData = sensorResult.data;
-        
-        // 2. Send to prediction API menggunakan Next.js API route
-        const requestData = {
-          temp_c: sensorData.temp_c,
-          do_mgl: sensorData.do_mgl,
-          ph: sensorData.ph,
-          conductivity_uscm: sensorData.conductivity_uscm,
-          totalcoliform_mpn_100ml: 0
-        };
-
-        console.log("Predicting with data:", requestData);
-
-        const predictionResponse = await fetch("/api/predict", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: 'include', // Kirim cookies
-          body: JSON.stringify(requestData),
-        });
-
-        const result = await predictionResponse.json();
-        
-        // Handle timeout
-        if (predictionResponse.status === 504) {
-          console.warn("Prediction API timeout, will retry in 30s...");
-          setIsLoading(false);
-          return; // Keep last known prediction
-        }
-        
-        // Handle service unavailable (network error)
-        if (predictionResponse.status === 503) {
-          console.warn("Prediction service unavailable, will retry in 30s...");
-          setIsLoading(false);
-          return; // Keep last known prediction
-        }
-        
-        // Handle server error
-        if (predictionResponse.status === 500) {
-          console.error("Prediction API error 500:", result.message);
-          setIsLoading(false);
-          return; // Keep last known prediction, will auto-retry
-        }
-
-        if (!predictionResponse.ok) {
-          console.error("Prediction API error:", predictionResponse.status);
-          setIsLoading(false);
-          return; // Keep last known status
-        }
-
-        console.log("AI Response:", result);
-
-        // Handle error response from API
         if (result.status === "error") {
-          console.error("API returned error:", result.message);
+          console.error("API Error:", result.message);
           setIsLoading(false);
-          return; // Keep last known status
+          return;
         }
-
-        // Temporary logic - will be replaced by backend status
-        const predictionValue = result.prediction?.total_coliform_mpn_100ml ?? 0;
         
-        let newPrediction = 100;
-        let newStatus: "AMAN" | "WASPADA" | "BAHAYA" = "AMAN";
-        
-        // Determine status based on MPN value
-        if (predictionValue <= 0.70) {
-          newStatus = "AMAN";
-        } else if (predictionValue >= 0.71 && predictionValue <= 0.99) {
-          newStatus = "WASPADA";
-        } else if (predictionValue >= 1.0) {
-          newStatus = "BAHAYA";
+        if (result.status !== "success" || !result.data) {
+          console.error("Invalid AI detection data format");
+          setIsLoading(false);
+          return;
         }
+        
+        const aiData: AIDetectionData = result.data;
+        
+        // Update state dengan data dari API
+        setMpnValue(aiData.mpn_value);
+        setStatus(aiData.status);
+        setReasons(aiData.reasons || []);
+        setRecommendations(aiData.recommendations || []);
 
-        setPrediction(newPrediction);
-        setStatus(newStatus);
+        console.log("AI Detection updated:", aiData);
 
       } catch (err) {
-        console.error("Error in AI Detection:", err);
+        console.error("Error fetching AI Detection:", err);
         
-        // Handle specific error types
         if (err instanceof Error) {
           if (err.name === 'AbortError') {
-            console.error("Request timeout - API took too long to respond");
+            console.error("Request timeout");
           } else if (err.message.includes('fetch')) {
-            console.error("Network error - check your internet connection or CORS settings");
+            console.error("Network error");
           }
         }
-        
-        // Keep showing last known status or default to AMAN during errors
-        // Don't reset to prevent flickering
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAndPredict();
-    
-    // Auto-refresh setiap 30 detik
-    const interval = setInterval(fetchAndPredict, 30000);
-    
-    return () => clearInterval(interval);
+    fetchAIDetection();
   }, []);
 
-  const series = [prediction];
+  const series = [100]; // Always full circle
   
   const getStatusColor = () => {
-    if (status === "AMAN") return "#10B981"; // Green
-    if (status === "WASPADA") return "#F59E0B"; // Amber/Yellow
-    return "#EF4444"; // Red
+    if (status === "Aman") return "#10B981"; // Green
+    if (status === "Waspada") return "#F59E0B"; // Amber/Yellow
+    return "#EF4444"; // Red (Bahaya)
   };
   
   const chartColor = getStatusColor();
@@ -319,10 +245,10 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
                 />
               </div>
 
-              <span className={`absolute left-1/2 top-full -translate-x-1/2 -translate-y-[95%] rounded-full px-3 py-1 text-xs font-medium ${
-                status === "AMAN" 
+              <span className={`absolute left-1/2 top-full -translate-x-1/2 -translate-y-[95%] rounded-full px-3 py-1 text-xs font-medium uppercase ${
+                status === "Aman" 
                   ? "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-500"
-                  : status === "WASPADA"
+                  : status === "Waspada"
                   ? "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-500"
                   : "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-500"
               }`}>
@@ -332,9 +258,39 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
           )}
         </div>
         
-        <p className="mx-auto mt-10 w-full max-w-[380px] text-center text-sm text-gray-500 sm:text-base">
-          Status hasil analisis AI terhadap sampel air. AI memprediksi apakah kadar E.coli berada pada batas aman atau melebihi ambang batas yang membahayakan.
-        </p>
+        {/* Alasan/Temuan */}
+        {reasons.length > 0 && (
+          <div className="mx-auto mt-6 w-full max-w-[380px]">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Alasan/Temuan
+            </h4>
+            <ul className="list-none text-sm text-gray-600 dark:text-gray-400 space-y-2">
+              {reasons.map((reason, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">•</span>
+                  <span className="flex-1">{reason}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
+        {/* Rekomendasi */}
+        {recommendations.length > 0 && (
+          <div className="mx-auto mt-4 w-full max-w-[380px]">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Rekomendasi
+            </h4>
+            <ul className="list-none text-sm text-gray-600 dark:text-gray-400 space-y-2">
+              {recommendations.map((rec, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-0.5">✓</span>
+                  <span className="flex-1">{rec}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-center px-6 py-4">

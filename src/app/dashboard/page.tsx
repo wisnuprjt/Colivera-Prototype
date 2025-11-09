@@ -25,8 +25,8 @@ export default function Ecommerce() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         {/* Left Column */}
         <div className="space-y-6">
-          <EColiHistory />
           <TotalColiformAI />
+          <EColiHistory />
         </div>
 
         {/* Right Column */}
