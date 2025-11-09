@@ -45,7 +45,8 @@ export default function TotalColiformAI({ hideDropdown = false }: TotalColiformA
         console.log("🔄 Fetching AI prediction history from backend...");
         
         // ✨ Fetch history dari backend dengan filter source=ai_prediction
-        const res = await fetch("http://localhost:4000/api/sensor/coliform/history?source=ai_prediction&limit=20", {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const res = await fetch(`${apiUrl}/sensor/coliform/history?source=ai_prediction&limit=20`, {
           method: 'GET',
           cache: 'no-cache',
           credentials: 'include',

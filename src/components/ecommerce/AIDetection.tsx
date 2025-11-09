@@ -39,8 +39,8 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
       
       try {
         // Fetch AI Detection data dari backend (includes predictions & recommendations)
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        const response = await fetch(`${apiUrl}/api/sensor/ai-detection`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const response = await fetch(`${apiUrl}/sensor/ai-detection`, {
           method: 'GET',
           cache: 'no-cache',
           credentials: 'include',

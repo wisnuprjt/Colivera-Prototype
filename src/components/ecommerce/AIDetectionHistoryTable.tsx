@@ -18,7 +18,8 @@ export default function AIDetectionHistoryTable() {
     async function fetchData() {
       try {
         setError(null);
-        const res = await fetch("http://localhost:4000/api/coliform/ai-prediction/history?limit=20", {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const res = await fetch(`${apiUrl}/coliform/ai-prediction/history?limit=20`, {
           method: 'GET',
           cache: 'no-cache',
           credentials: 'include',

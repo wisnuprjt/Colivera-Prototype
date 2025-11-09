@@ -19,7 +19,7 @@ export default function NotificationDropdown() {
   const { user } = useAuth();
 
   // ✅ samakan ENV dengan AuthContext
-  const API_URL = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const toggleDropdown = () => setIsOpen(!isOpen);
   const closeDropdown = () => setIsOpen(false);
@@ -34,7 +34,7 @@ export default function NotificationDropdown() {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/notifications`, {
+      const res = await fetch(`${API_URL}/notifications`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

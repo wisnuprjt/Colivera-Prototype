@@ -25,9 +25,10 @@ export default function ManualOverride() {
     setMessage("");
 
     try {
-      console.log("Sending override request to:", `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/override`);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      console.log("Sending override request to:", `${apiUrl}/override`);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/override`, {
+      const response = await fetch(`${apiUrl}/override`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

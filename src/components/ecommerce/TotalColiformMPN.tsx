@@ -37,7 +37,8 @@ export default function TotalColiformMPN({ hideDropdown = false }: TotalColiform
         console.log("🔄 Fetching coliform history (SENSOR only) from backend...");
         
         // ✨ FILTER BY SOURCE: hanya ambil data dari sensor
-        const res = await fetch("http://localhost:4000/api/sensor/coliform/history?source=sensor&limit=20", {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const res = await fetch(`${apiUrl}/sensor/coliform/history?source=sensor&limit=20`, {
           method: 'GET',
           cache: 'no-cache',
           credentials: 'include',

@@ -7,7 +7,7 @@ function deleteCookie(name: string) {
 
 // Create axios instance dengan base URL backend
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   withCredentials: true, // Untuk mengirim cookie JWT
   headers: {
     'Content-Type': 'application/json',
