@@ -13,8 +13,6 @@ const SocketContext = createContext<SocketContextType>({
   isConnected: false,
 });
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-
 export function SocketProvider({ children }: { children: ReactNode }) {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = React.useState(false);
@@ -22,8 +20,14 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     console.log("🔌 Initializing Socket.IO...");
 
-    // Create socket connection
-    const socket = io(API_BASE, {
+    // ✅ Extract base URL without /api for Socket.IO connection
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+    const socketUrl = apiUrl.replace('/api', '');
+    
+    console.log("🔗 Socket URL:", socketUrl);
+
+    // ✅ BENAR: Create socket connection
+    const socket = io(socketUrl, {
       withCredentials: true,
       transports: ["websocket", "polling"],
       reconnection: true,
