@@ -21,7 +21,8 @@ export default function SignIn() {
     setErr(null);
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
+      // ✅ FIXED: Removed /api (already in NEXT_PUBLIC_API_URL)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -32,7 +33,8 @@ export default function SignIn() {
         throw new Error(data?.message || "Login gagal. Coba lagi.");
       }
 
-      const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
+      // ✅ FIXED: Removed /api from path
+      const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
         credentials: "include",
       });
       const me = await meRes.json().catch(() => ({}));
