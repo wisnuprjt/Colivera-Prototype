@@ -25,7 +25,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+// ✅ CRITICAL: Add fallback to prevent undefined
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://colivera-be-production.up.railway.app/api';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -36,29 +37,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ========================
   const fetchUser = useCallback(async (silent = false) => {
     try {
-      if (!silent) console.log("🔄 Fetching user session...");
+      if (!silent) {
+        console.log("🔄 Fetching user session from:", API_BASE);
+      }
 
       const res = await fetch(`${API_BASE}/auth/me`, {
+        method: 'GET',
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
       });
 
-      if (!res.ok) {
-        if (!silent) console.log("🔴 No active session");
-        setUser(null);
-      } else {
-        const data = await res.json();
-        const userData = (data && (data.user ?? data)) as User;
-        
-        if (!silent) {
-          console.log("✅ Session loaded:", userData.email, `(${userData.role})`);
-        }
-        
-        setUser(userData);
+      if (!silent) {
+        console.log("📡 Response status:", res.status);
       }
-    } catch (e) {
-      console.error("Fetch user error:", e);
+
+      if (!res.ok) {
+        if (!silent) {
+          console.log("🔴 No active session - Status:", res.status);
+        }
+        setUser(null);
+        return;
+      }
+
+      const data = await res.json();
+      
+      if (!silent) {
+        console.log("📦 Raw response:", data);
+      }
+      
+      // ✅ Handle both response formats
+      const userData = (data.user || data) as User;
+      
+      // ✅ Validate before setting
+      if (!userData || !userData.email || !userData.role) {
+        console.error("⚠️ Invalid user data:", userData);
+        setUser(null);
+        return;
+      }
+      
+      if (!silent) {
+        console.log("✅ Session loaded:", {
+          name: userData.name,
+          email: userData.email,
+          role: userData.role
+        });
+      }
+      
+      setUser(userData);
+      
+    } catch (e: any) {
+      console.error("❌ Fetch user error:", e.message);
       setUser(null);
     } finally {
       setLoading(false);
@@ -74,10 +103,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Load user immediately
     fetchUser(false);
 
-    // Periodic check every 3 seconds (aggressive sync)
+    // ✅ Reduced frequency: check every 30 seconds
     const interval = setInterval(() => {
       fetchUser(true);
-    }, 3000);
+    }, 30000);
 
     // Cross-tab sync
     const syncHandler = (e: StorageEvent) => {
@@ -107,6 +136,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // LOGIN
   // ========================
   const login = async (email: string, password: string) => {
+    console.log("🔐 Attempting login to:", API_BASE);
+    
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -116,19 +147,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
+      console.error("❌ Login failed:", err.message);
       throw new Error(err.message || "Login failed");
     }
 
     const data = await res.json();
-    const userWithToken = { ...(data.user ?? data), token: data.token };
-
-    console.log("✅ Login success:", userWithToken.email);
+    console.log("📦 Login response:", data);
     
-    setUser(userWithToken as User);
+    // ✅ Handle response format
+    const userData = (data.user || data) as User;
+    
+    console.log("✅ Login success:", {
+      name: userData.name,
+      email: userData.email,
+      role: userData.role
+    });
+    
+    setUser(userData);
     localStorage.setItem("colivera_session_change", Date.now().toString());
     
-    // Immediate validation
-    setTimeout(() => fetchUser(true), 100);
+    // Immediate validation with delay
+    setTimeout(() => fetchUser(false), 500);
   };
 
   // ========================
