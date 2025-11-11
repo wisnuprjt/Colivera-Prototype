@@ -34,7 +34,7 @@ export default function NotificationDropdown() {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/notifications`, {
+      const res = await fetch(`${API_URL}/api/notifications`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -42,6 +42,23 @@ export default function NotificationDropdown() {
         },
         credentials: "include", // ✨ penting untuk cookie JWT
       });
+
+      // ✅ Cek apakah response OK sebelum parse JSON
+      if (!res.ok) {
+        console.warn(`⚠️ Notification API returned status ${res.status}`);
+        setNotifications([]);
+        setNotifying(false);
+        return;
+      }
+
+      // ✅ Cek content-type untuk memastikan response adalah JSON
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        console.warn("⚠️ Response is not JSON:", contentType);
+        setNotifications([]);
+        setNotifying(false);
+        return;
+      }
 
       const data = await res.json();
       console.log("🔍 Notification Fetch Result:", data);
@@ -54,9 +71,12 @@ export default function NotificationDropdown() {
         setNotifying(hasUnread);
       } else {
         setNotifications([]);
+        setNotifying(false);
       }
     } catch (err) {
       console.error("❌ Gagal fetch notifikasi:", err);
+      setNotifications([]); // ✅ Reset ke array kosong jika error
+      setNotifying(false);
     } finally {
       setLoading(false);
     }

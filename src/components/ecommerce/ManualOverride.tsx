@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Power, Loader2, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import axiosInstance from "@/lib/axios";
 
 interface OverrideResponse {
   success: boolean;
@@ -25,38 +26,12 @@ export default function ManualOverride() {
     setMessage("");
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      console.log("Sending override request to:", `${apiUrl}/override`);
+      console.log("Sending override request to backend...");
       
-      const response = await fetch(`${apiUrl}/override`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // Kirim cookie JWT
-      });
-
-      console.log("Response status:", response.status);
-      console.log("Response headers:", response.headers.get("content-type"));
-
-      // Check if response is JSON
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        console.error("Invalid content-type:", contentType);
-        throw new Error("Server error: Invalid response format. Please check if backend is running.");
-      }
-
-      const data: OverrideResponse = await response.json();
+      const response = await axiosInstance.post('/api/override');
+      const data: any = response.data;
+      
       console.log("Response data:", data);
-
-      // Handle different status codes
-      if (response.status === 401) {
-        throw new Error("⚠️ Unauthorized: Silakan login terlebih dahulu");
-      }
-
-      if (!response.ok) {
-        throw new Error(data.message || `Server error: ${response.status}`);
-      }
 
       if (data.success) {
         setStatus("success");

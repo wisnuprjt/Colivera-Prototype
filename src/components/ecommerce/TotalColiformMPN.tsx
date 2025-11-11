@@ -6,6 +6,7 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { MoreDotIcon } from "@/icons";
 import { useRouter } from "next/navigation";
+import axiosInstance from "@/lib/axios";
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -37,16 +38,13 @@ export default function TotalColiformMPN({ hideDropdown = false }: TotalColiform
         console.log("🔄 Fetching coliform history (SENSOR only) from backend...");
         
         // ✨ FILTER BY SOURCE: hanya ambil data dari sensor
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        const res = await fetch(`${apiUrl}/sensor/coliform/history?source=sensor&limit=20`, {
-          method: 'GET',
-          cache: 'no-cache',
-          credentials: 'include',
+        const res = await axiosInstance.get('/api/sensor/coliform/history', {
+          params: { source: 'sensor', limit: 20 }
         });
         
         console.log("📡 Response status:", res.status);
         
-        const json = await res.json();
+        const json: any = res.data;
         console.log("📊 Backend response:", json);
 
         if (json.status === "success" && json.chartData) {

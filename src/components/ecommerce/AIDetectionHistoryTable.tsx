@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import axiosInstance from "@/lib/axios";
 
 interface AIPredictionRecord {
   id: number;
@@ -18,28 +19,41 @@ export default function AIDetectionHistoryTable() {
     async function fetchData() {
       try {
         setError(null);
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        const res = await fetch(`${apiUrl}/coliform/ai-prediction/history?limit=20`, {
-          method: 'GET',
-          cache: 'no-cache',
-          credentials: 'include',
+        setLoading(true);
+        
+        // Try backend endpoint first
+        const res = await axiosInstance.get('/api/coliform/ai-prediction/history', {
+          params: { limit: 20 }
         });
         
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
+        const json: any = res.data;
         
-        const json = await res.json();
-        
-        if (json.status === "success") {
+        if (json.status === "success" && Array.isArray(json.data)) {
           setData(json.data);
-          console.log("✅ AI Prediction history loaded:", json.count, "records");
+          console.log("✅ AI Prediction history loaded:", json.data.length, "records");
         } else {
           throw new Error(json.message || "Failed to fetch data");
         }
       } catch (error: any) {
         console.error("❌ Error fetching AI prediction history:", error);
-        setError(error.message);
+        
+        // Provide more helpful error messages
+        if (error.response) {
+          // Backend responded with error
+          const status = error.response.status;
+          if (status === 404) {
+            setError("Endpoint tidak ditemukan. Pastikan backend sudah berjalan di localhost:4000");
+          } else if (status === 500) {
+            setError("Server error. Periksa log backend.");
+          } else {
+            setError(`Error ${status}: ${error.response.data?.message || error.message}`);
+          }
+        } else if (error.request) {
+          // Request made but no response
+          setError("Backend tidak merespons. Pastikan backend sudah berjalan di localhost:4000");
+        } else {
+          setError(error.message || "Terjadi kesalahan");
+        }
       } finally {
         setLoading(false);
       }

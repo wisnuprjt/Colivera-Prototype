@@ -14,6 +14,7 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { MoreDotIcon } from "@/icons";
 import { useRouter } from "next/navigation";
+import axiosInstance from "@/lib/axios";
 
 // DataPoint untuk AI Prediction dengan CI bands
 interface DataPoint {
@@ -45,16 +46,13 @@ export default function TotalColiformAI({ hideDropdown = false }: TotalColiformA
         console.log("🔄 Fetching AI prediction history from backend...");
         
         // ✨ Fetch history dari backend dengan filter source=ai_prediction
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        const res = await fetch(`${apiUrl}/sensor/coliform/history?source=ai_prediction&limit=20`, {
-          method: 'GET',
-          cache: 'no-cache',
-          credentials: 'include',
+        const res = await axiosInstance.get('/api/sensor/coliform/history', {
+          params: { source: 'ai_prediction', limit: 20 }
         });
         
         console.log("📡 Response status:", res.status);
         
-        const json = await res.json();
+        const json: any = res.data;
         console.log("📊 Backend response:", json);
 
         if (json.status === "success" && json.chartData) {

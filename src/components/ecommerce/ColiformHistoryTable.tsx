@@ -24,11 +24,22 @@ export default function ColiformHistoryTable() {
   useEffect(() => {
     async function fetchHistory() {
       try {
-        const res = await fetch(`${API_BASE}/coliform/latest`);
+        const res = await fetch(`${API_BASE}/api/coliform/latest`, {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
         const json = await res.json();
         setData(json.data || []);
       } catch (err) {
-        console.error("Error fetching coliform history:", err);
+        console.error("❌ Error fetching coliform history:", err);
       } finally {
         setLoading(false);
       }

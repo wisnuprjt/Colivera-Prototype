@@ -6,6 +6,7 @@ import { MoreDotIcon } from "@/icons";
 import { useState, useEffect } from "react";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useRouter } from "next/navigation";
+import axiosInstance from "@/lib/axios";
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -39,41 +40,9 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
       
       try {
         // Fetch AI Detection data dari backend (includes predictions & recommendations)
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        const response = await fetch(`${apiUrl}/sensor/ai-detection`, {
-          method: 'GET',
-          cache: 'no-cache',
-          credentials: 'include',
-        });
+        const response = await axiosInstance.get('/api/sensor/ai-detection');
         
-        const result = await response.json();
-        
-        // Handle timeout
-        if (response.status === 504) {
-          console.warn("AI Detection API timeout, will retry in 30s...");
-          setIsLoading(false);
-          return;
-        }
-        
-        // Handle service unavailable
-        if (response.status === 503) {
-          console.warn("Service unavailable, will retry in 30s...");
-          setIsLoading(false);
-          return;
-        }
-        
-        // Handle server error
-        if (response.status === 500) {
-          console.error("AI Detection API error 500:", result.message);
-          setIsLoading(false);
-          return;
-        }
-        
-        if (!response.ok) {
-          console.error("Failed to fetch AI detection:", response.status);
-          setIsLoading(false);
-          return;
-        }
+        const result: any = response.data;
         
         if (result.status === "no_data") {
           console.log("No sensor data available for AI detection yet");
@@ -103,7 +72,7 @@ export default function AIDetection({ hideDropdown = false }: AIDetectionProps) 
 
         console.log("AI Detection updated:", aiData);
 
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching AI Detection:", err);
         
         if (err instanceof Error) {

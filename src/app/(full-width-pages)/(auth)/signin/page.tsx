@@ -7,9 +7,11 @@ import Button from "@/components/ui/button/Button";
 import Head from "next/head";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignIn() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,27 +23,14 @@ export default function SignIn() {
     setErr(null);
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.message || "Login gagal. Coba lagi.");
-      }
-
-      const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
-        credentials: "include",
-      });
-      const me = await meRes.json().catch(() => ({}));
-      if (me?.user?.role) sessionStorage.setItem("role", me.user.role);
-
+      await login(email, password);
+      
+      // Login berhasil - redirect berdasarkan role
       router.push("/dashboard");
       router.refresh();
     } catch (error: any) {
-      setErr(error?.message || "Login gagal");
+      console.error("Login error:", error);
+      setErr(error?.message || "Login gagal. Periksa email dan password Anda.");
     } finally {
       setLoading(false);
     }

@@ -38,9 +38,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!silent) console.log("🔄 Fetching user session...");
 
-      const res = await fetch(`${API_BASE}/auth/me`, {
+      const res = await fetch(`${API_BASE}/api/auth/me`, {
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
         cache: "no-store",
       });
 
@@ -48,6 +51,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!silent) console.log("🔴 No active session");
         setUser(null);
       } else {
+        // Check if response is JSON
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          console.error("❌ Backend returned non-JSON response:", contentType);
+          setUser(null);
+          return;
+        }
+
         const data = await res.json();
         const userData = (data && (data.user ?? data)) as User;
         
@@ -57,8 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         setUser(userData);
       }
-    } catch (e) {
-      console.error("Fetch user error:", e);
+    } catch (e: any) {
+      if (!silent) {
+        console.error("❌ Fetch user error:", e.message);
+      }
       setUser(null);
     } finally {
       setLoading(false);
@@ -107,12 +120,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // LOGIN
   // ========================
   const login = async (email: string, password: string) => {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
       credentials: "include",
       body: JSON.stringify({ email, password }),
     });
+
+    // Check if response is JSON before parsing
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      console.error("❌ Backend returned HTML instead of JSON");
+      throw new Error("Server error: Backend tidak merespons dengan benar. Pastikan backend berjalan di localhost:4000");
+    }
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -137,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       console.log("🚪 Logging out...");
-      await fetch(`${API_BASE}/auth/logout`, {
+      await fetch(`${API_BASE}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
