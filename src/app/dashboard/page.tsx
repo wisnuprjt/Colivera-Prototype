@@ -37,9 +37,9 @@ export default function Ecommerce() {
       </div>
 
       {/* Bottom Section - Lokasi */}
-      <div className="w-full">
+      {/* <div className="w-full">
         <Lokasi />
-      </div>
+      </div> */}
     </div>
   );
 }

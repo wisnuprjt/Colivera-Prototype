@@ -115,7 +115,7 @@ export default function TotalColiformAI({ hideDropdown = false }: TotalColiformA
 
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <div className="text-sm text-gray-500">Latest</div>
+            <div className="text-sm text-gray-500">Data Terbaru</div>
             <div className="text-xl font-bold text-gray-800 dark:text-white/90">
               {latest ? `${fmt.format(latest.pred)} MPN` : loading ? "Loading..." : "-"}
             </div>

@@ -152,7 +152,7 @@ export default function TotalColiformMPN({ hideDropdown = false }: TotalColiform
 
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <div className="text-sm text-gray-500">Latest</div>
+            <div className="text-sm text-gray-500">Data Terbaru</div>
             <div className="text-xl font-bold text-gray-800 dark:text-white/90">
               {latest ? `${latest.cfu} MPN` : loading ? "Loading..." : "-"}
             </div>

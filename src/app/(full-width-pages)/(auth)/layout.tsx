@@ -72,7 +72,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {/* HERO KIRI */}
         <div className="relative flex flex-col justify-center items-start flex-1 w-full max-w-lg text-left lg:pl-10 z-10">
           <Image
-            src="/images/logo/LogoPama.svg"
+            src="/images/logo/ColiveraLogo.svg"
             width={190}
             height={45}
             alt="COLIVERA Logo"

@@ -89,7 +89,7 @@ const AppHeader: React.FC = () => {
               width={70}
               height={32}
               className="hidden" //"dark:hidden" kalo mau nampilin gambar
-              src="./images/logo/LogoPama.svg" //ubah disini buat logo header atas
+              src="./images/logo/ColiveraLogoFix.svg" //ubah disini buat logo header atas
               alt="Logo"
             />
             <Image
